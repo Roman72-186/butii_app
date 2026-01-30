@@ -44,7 +44,7 @@ npm run dev
 
 ```javascript
 const CONFIG = {
-    WEBHOOK_URL: 'https://rb786743.leadteh.ru/inner_webhook/ВАШ-UUID',
+    WEBHOOK_URL: 'https://rb786743.leadteh.ru/inner_webhook/1f829cc9-3da3-4485-a97d-350e0d34baa1',
     // ...
 };
 ```

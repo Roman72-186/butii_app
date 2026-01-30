@@ -8,7 +8,7 @@ const CONFIG = {
     // НАСТРОЙКИ ИНТЕГРАЦИИ
     // ===================================
 
-    WEBHOOK_URL: 'https://rb786743.leadteh.ru/inner_webhook/bf5c8437-6871-4c61-b23b-c4d65b847aa8',
+    WEBHOOK_URL: '/api/webhook',
 
     // ===================================
     // НАСТРОЙКИ СТУДИИ

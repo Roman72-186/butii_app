@@ -28,7 +28,7 @@ keychain-shop/
 ### 2. Настройте вебхук
 Откройте `js/config.js` и вставьте URL вебхука из LEADTEX:
 ```javascript
-WEBHOOK_URL: 'https://rb786743.leadteh.ru/inner_webhook/ВАШ-UUID',
+WEBHOOK_URL: 'https://rb786743.leadteh.ru/inner_webhook/1f829cc9-3da3-4485-a97d-350e0d34baa1',
 ```
 
 ### 3. Загрузите на GitHub

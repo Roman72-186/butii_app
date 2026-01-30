@@ -518,16 +518,22 @@ async function submitBooking(event) {
 }
 
 async function sendBookingToServer(booking) {
-    // Получаем telegram_id из localStorage для надежности
-    const storedTelegramId = localStorage.getItem('telegram_id');
-    const telegramUserId = telegramApp.getUserId().toString();
+    // Надежное получение telegramId с fallback на localStorage и моковые данные
+    let telegramId = localStorage.getItem('telegram_id');
     
-    // Используем ID из localStorage, если он доступен, иначе из Telegram API
-    const telegramId = storedTelegramId || telegramUserId;
+    if (!telegramId && window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
+        telegramId = window.Telegram.WebApp.initDataUnsafe.user.id.toString();
+        localStorage.setItem('telegram_id', telegramId);
+    }
+
+    if (!telegramId) {
+        console.warn('Telegram ID не найден. Используется моковый пользователь.');
+        telegramId = CONFIG.MOCK_USER.id.toString(); // Используем мок, если ID все еще нет
+    }
     
     console.log('📤 Отправка бронирования в LEADTEX');
-    console.log('🆔 Telegram ID (из localStorage):', storedTelegramId);
-    console.log('🆔 Telegram ID (из Telegram API):', telegramUserId);
+    console.log('🆔 Telegram ID (из localStorage):', localStorage.getItem('telegram_id'));
+    console.log('🆔 Telegram ID (из Telegram WebApp):', window.Telegram?.WebApp?.initDataUnsafe?.user?.id?.toString());
     console.log('🆔 Используемый Telegram ID:', telegramId);
     
     // Подготовка данных для LEADTEX в соответствии с документацией
@@ -559,7 +565,7 @@ async function sendBookingToServer(booking) {
             order_comment: booking.customerComment,
 
             source: "mini_app_beauty_studio",
-            telegram_user_name: telegramApp.getUserName(),
+            telegram_user_name: typeof telegramApp !== 'undefined' ? telegramApp.getUserName() : 'debug_user',
             
             // Дополнительные переменные для бронирования
             booking_date: booking.date,
@@ -571,6 +577,12 @@ async function sendBookingToServer(booking) {
     };
 
     console.log('📦 Payload для отправки:', leadtexPayload);
+    
+    // Добавляем логирование URL и заголовков
+    console.log('📡 Отправка запроса на URL:', CONFIG.WEBHOOK_URL);
+    console.log('🏷️ Заголовки запроса:', {
+        'Content-Type': 'application/json'
+    });
 
     const response = await fetch(CONFIG.WEBHOOK_URL, {
         method: 'POST',
@@ -578,6 +590,9 @@ async function sendBookingToServer(booking) {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify(leadtexPayload)
+    }).catch(error => {
+        console.error('📡 Fetch Error:', error);
+        throw error; // Перебрасываем ошибку для дальнейшей обработки
     });
 
     // Логирование результата отправки

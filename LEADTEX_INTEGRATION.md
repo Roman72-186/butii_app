@@ -69,7 +69,7 @@ fetch(CONFIG.WEBHOOK_URL, {
 
 1. Перейдите в **LEADTEX → Настройки → Webhooks**
 2. Создайте **Inner Webhook**
-3. Скопируйте URL: `https://rb786743.leadteh.ru/inner_webhook/ВАШ-UUID`
+3. Скопируйте URL: `https://rb786743.leadteh.ru/inner_webhook/1f829cc9-3da3-4485-a97d-350e0d34baa1`
 
 ### Шаг 3: Создайте сценарий обработки заказа
 
