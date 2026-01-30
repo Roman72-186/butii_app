@@ -518,10 +518,22 @@ async function submitBooking(event) {
 }
 
 async function sendBookingToServer(booking) {
+    // Получаем telegram_id из localStorage для надежности
+    const storedTelegramId = localStorage.getItem('telegram_id');
+    const telegramUserId = telegramApp.getUserId().toString();
+    
+    // Используем ID из localStorage, если он доступен, иначе из Telegram API
+    const telegramId = storedTelegramId || telegramUserId;
+    
+    console.log('📤 Отправка бронирования в LEADTEX');
+    console.log('🆔 Telegram ID (из localStorage):', storedTelegramId);
+    console.log('🆔 Telegram ID (из Telegram API):', telegramUserId);
+    console.log('🆔 Используемый Telegram ID:', telegramId);
+    
     // Подготовка данных для LEADTEX в соответствии с документацией
     const leadtexPayload = {
         contact_by: 'telegram_id',
-        search: telegramApp.getUserId().toString(),
+        search: telegramId,
         variables: {
             order_id: booking.id,
             order_total: booking.service.price.toString(),
@@ -557,6 +569,8 @@ async function sendBookingToServer(booking) {
             booking_duration: booking.service.duration
         }
     };
+
+    console.log('📦 Payload для отправки:', leadtexPayload);
 
     const response = await fetch(CONFIG.WEBHOOK_URL, {
         method: 'POST',

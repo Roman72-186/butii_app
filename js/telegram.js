@@ -16,6 +16,13 @@ class TelegramApp {
             this.tg.expand();
             this.user = this.tg.initDataUnsafe?.user;
             
+            // Сохраняем telegram_id в localStorage для дальнейшего использования
+            if (this.user && this.user.id) {
+                localStorage.setItem('telegram_id', this.user.id.toString());
+                console.log('📱 Telegram ID сохранен в localStorage:', this.user.id);
+                console.log('🆔 Telegram ID:', this.user?.id);
+            }
+            
             // Настройка темы
             this.setupTheme();
             
