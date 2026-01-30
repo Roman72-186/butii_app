@@ -2,6 +2,14 @@
 // Это решает проблему CORS
 
 export default async function handler(req, res) {
+    // Логируем информацию о запросе
+    console.log('Webhook received:', {
+        method: req.method,
+        url: req.url,
+        headers: req.headers,
+        body: req.body
+    });
+
     // Разрешаем только POST запросы
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method not allowed' });
@@ -22,6 +30,13 @@ export default async function handler(req, res) {
         });
 
         const data = await response.text();
+        
+        // Логируем ответ от LEADTEX
+        console.log('Response from LEADTEX:', {
+            status: response.status,
+            ok: response.ok,
+            data: data
+        });
         
         // Возвращаем ответ клиенту
         return res.status(response.status).json({

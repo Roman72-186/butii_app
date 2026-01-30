@@ -3,7 +3,7 @@
   "rewrites": [
     {
       "source": "/api/webhook",
-      "destination": "https://rb786743.leadteh.ru/inner_webhook/4228d48d-9a90-40aa-b249-664e73405c4a"
+      "destination": "/api/webhook.js"
     }
   ],
   "headers": [
