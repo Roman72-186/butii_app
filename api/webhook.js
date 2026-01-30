@@ -16,7 +16,7 @@ export default async function handler(req, res) {
     }
 
     // URL вебхука LEADTEX
-    const WEBHOOK_URL = 'https://rb786743.leadteh.ru/inner_webhook/4228d48d-9a90-40aa-b249-664e73405c4a';
+    const WEBHOOK_URL = 'https://rb786743.leadteh.ru/inner_webhook/bf5c8437-6871-4c61-b23b-c4d65b847aa8';
 
     try {
         // Проксируем запрос к LEADTEX
