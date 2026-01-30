@@ -15,8 +15,8 @@ export default async function handler(req, res) {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    // URL вебхука LEADTEX
-    const WEBHOOK_URL = 'https://rb786743.leadteh.ru/inner_webhook/bf5c8437-6871-4c61-b23b-c4d65b847aa8';
+    // Получаем URL вебхука LEADTEX из переменных окружения или используем значение по умолчанию
+    const WEBHOOK_URL = process.env.LEADTEX_WEBHOOK_URL || 'https://rb786743.leadteh.ru/inner_webhook/bf5c8437-6871-4c61-b23b-c4d65b847aa8';
 
     try {
         // Проксируем запрос к LEADTEX

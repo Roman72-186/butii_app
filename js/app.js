@@ -518,27 +518,44 @@ async function submitBooking(event) {
 }
 
 async function sendBookingToServer(booking) {
-    const payload = {
-        type: 'booking',
-        booking: {
-            id: booking.id,
-            service: booking.service.name,
-            serviceId: booking.serviceId,
-            master: booking.master.name,
-            masterId: booking.masterId,
-            date: booking.date,
-            time: booking.time,
-            duration: booking.service.duration,
-            price: booking.service.price,
-            customerName: booking.customerName,
-            customerPhone: booking.customerPhone,
-            customerComment: booking.customerComment,
-            createdAt: booking.createdAt
-        },
-        telegram: typeof telegramApp !== 'undefined' ? {
-            userId: telegramApp.getUserId(),
-            user: telegramApp.getUser()
-        } : null
+    // Подготовка данных для LEADTEX в соответствии с документацией
+    const leadtexPayload = {
+        contact_by: 'telegram_id',
+        search: telegramApp.getUserId().toString(),
+        variables: {
+            order_id: booking.id,
+            order_total: booking.service.price.toString(),
+            order_subtotal: booking.service.price.toString(),
+            order_delivery: "0",
+            order_items_count: "1",
+            order_timestamp: new Date().toISOString(),
+
+            order_items: JSON.stringify([{
+                name: booking.service.name,
+                quantity: 1,
+                price: booking.service.price,
+                total: booking.service.price
+            }]),
+
+            customer_name: booking.customerName,
+            customer_phone: booking.customerPhone,
+            customer_email: "", // не используется в бронировании
+
+            delivery_city: "", // не используется в бронировании
+            delivery_address: "", // не используется в бронировании
+
+            order_comment: booking.customerComment,
+
+            source: "mini_app_beauty_studio",
+            telegram_user_name: telegramApp.getUserName(),
+            
+            // Дополнительные переменные для бронирования
+            booking_date: booking.date,
+            booking_time: booking.time,
+            booking_service: booking.service.name,
+            booking_master: booking.master.name,
+            booking_duration: booking.service.duration
+        }
     };
 
     const response = await fetch(CONFIG.WEBHOOK_URL, {
@@ -546,8 +563,15 @@ async function sendBookingToServer(booking) {
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(leadtexPayload)
     });
+
+    // Логирование результата отправки
+    if (response.ok) {
+        console.log('✅ Запись успешно отправлена в LEADTEX:', leadtexPayload);
+    } else {
+        console.error('❌ Ошибка отправки в LEADTEX:', response.status, await response.text());
+    }
 
     return response.json();
 }
