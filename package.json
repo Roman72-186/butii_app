@@ -1,7 +1,7 @@
 {
-  "name": "keychain-shop-miniapp",
-  "version": "1.0.0",
-  "description": "Telegram Mini App магазин с интеграцией LEADTEX CRM",
+  "name": "beauty-studio-miniapp",
+  "version": "2.0.0",
+  "description": "Telegram Mini App для записи на услуги Beauty Studio с интеграцией LEADTEX CRM",
   "main": "index.html",
   "scripts": {
     "dev": "npx http-server -p 3000 -o",
@@ -14,9 +14,9 @@
   "keywords": [
     "telegram",
     "mini-app",
-    "shop",
-    "leadtex",
-    "e-commerce"
+    "beauty-studio",
+    "booking",
+    "leadtex"
   ],
   "author": "",
   "license": "MIT",

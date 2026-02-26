@@ -8,6 +8,7 @@ const localStorageMock = {
     store: {},
     getItem: jest.fn(key => localStorageMock.store[key] || null),
     setItem: jest.fn((key, value) => { localStorageMock.store[key] = value; }),
+    removeItem: jest.fn(key => { delete localStorageMock.store[key]; }),
     clear: jest.fn(() => { localStorageMock.store = {}; })
 };
 Object.defineProperty(global, 'localStorage', { value: localStorageMock });
@@ -15,180 +16,102 @@ Object.defineProperty(global, 'localStorage', { value: localStorageMock });
 // Мокаем fetch
 global.fetch = jest.fn();
 
-// Мокаем CONFIG
-global.CONFIG = {
-    WEBHOOK_URL: '/api/webhook',
-    SHOP: {
-        name: 'TestShop',
-        logo: '🛒',
-        currency: '₽',
-        currencyCode: 'RUB'
-    },
-    CATEGORIES: [
-        { id: 'all', name: 'Все товары', icon: '🏠' },
-        { id: 'electronics', name: 'Электроника', icon: '📱' },
-        { id: 'accessories', name: 'Аксессуары', icon: '🔑' }
-    ],
-    PRODUCTS: [
-        {
-            id: 'prod-001',
-            name: 'Тестовый товар 1',
-            price: 1000,
-            oldPrice: 1500,
-            category: 'electronics',
-            badge: 'Хит',
-            rating: 4.5,
-            reviews: 100,
-            image: 'https://example.com/img1.jpg',
-            images: ['https://example.com/img1.jpg', 'https://example.com/img2.jpg'],
-            description: 'Описание товара 1',
-            features: [{ label: 'Цвет', value: 'Черный' }],
-            inStock: true
-        },
-        {
-            id: 'prod-002',
-            name: 'Тестовый товар 2',
-            price: 500,
-            category: 'accessories',
-            badge: null,
-            rating: 4.0,
-            reviews: 50,
-            image: 'https://example.com/img3.jpg',
-            images: ['https://example.com/img3.jpg'],
-            description: 'Описание товара 2',
-            features: [{ label: 'Размер', value: 'M' }],
-            inStock: true
-        }
-    ],
-    DELIVERY: {
-        freeShippingThreshold: 2000,
-        cost: 299,
-        estimatedDays: '1-3'
-    },
-    getProductById: jest.fn(id => CONFIG.PRODUCTS.find(p => p.id === id)),
-    getProductsByCategory: jest.fn(catId => {
-        if (catId === 'all') return CONFIG.PRODUCTS;
-        return CONFIG.PRODUCTS.filter(p => p.category === catId);
-    }),
-    formatPrice: jest.fn(price => price.toLocaleString('ru-RU') + ' ₽'),
-    getDiscount: jest.fn((price, oldPrice) => {
-        if (!oldPrice || oldPrice <= price) return 0;
-        return Math.round((1 - price / oldPrice) * 100);
-    })
-};
+// Загружаем CONFIG
+global.CONFIG = require('../js/config.js');
 
 // Мокаем telegramApp
 global.telegramApp = {
+    init: jest.fn(),
     getUserId: jest.fn(() => 123456789),
-    getUserName: jest.fn(() => 'Test User'),
+    getUserName: jest.fn(() => 'Тест Пользователь'),
+    getUser: jest.fn(() => ({ id: 123456789, first_name: 'Тест', last_name: 'Пользователь' })),
     showAlert: jest.fn(),
     showConfirm: jest.fn((msg, cb) => cb(true)),
     hapticFeedback: jest.fn(),
     tg: null
 };
 
-// Базовый HTML для тестов
+// Базовый HTML для тестов (соответствует текущему index.html)
 const baseHTML = `
 <div id="loader"></div>
 <div id="app" style="display: none;">
-    <span id="shopName"></span>
-    <span id="shopLogo"></span>
-    <div id="cartIcon"></div>
-    <span id="cartBadge">0</span>
+    <span id="studioLogo"></span>
+    <span id="studioName"></span>
+    <span id="bookingsBadge" style="display: none;">0</span>
 
-    <section id="catalogSection">
+    <section id="servicesSection">
         <div id="categories"></div>
-        <div id="productsGrid"></div>
+        <div id="servicesGrid"></div>
     </section>
 
-    <section id="productSection" style="display: none;">
-        <img id="mainImage" src="">
-        <div id="productBadge"></div>
-        <h1 id="productTitle"></h1>
-        <div id="productRating"></div>
-        <div id="productPrice"></div>
-        <div id="productOldPrice"></div>
-        <div id="productDiscount"></div>
-        <p id="productDescription"></p>
-        <ul id="productFeatures"></ul>
-        <div id="imageThumbnails"></div>
-        <span id="deliveryInfo"></span>
-        <span id="deliveryDays"></span>
-        <input id="quantity" value="1">
-        <span id="btnPrice"></span>
+    <section id="mastersSection" style="display: none;">
+        <div id="selectedServiceCard"></div>
+        <div id="mastersList"></div>
     </section>
 
-    <section id="cartSection" style="display: none;">
-        <div id="cartEmpty"></div>
-        <div id="cartContent" style="display: none;">
-            <div id="cartItems"></div>
-            <span id="subtotal"></span>
-            <span id="deliveryCost"></span>
-            <span id="total"></span>
+    <section id="bookingSection" style="display: none;">
+        <div id="bookingInfoCard"></div>
+        <div id="calendarDays"></div>
+        <div id="timeSection" style="display: none;">
+            <div id="timeSlots"></div>
         </div>
+        <div id="bookingActions" style="display: none;"></div>
     </section>
 
-    <section id="checkoutSection" style="display: none;">
-        <form id="checkoutForm">
+    <section id="confirmationSection" style="display: none;">
+        <div id="confirmationDetails"></div>
+        <form id="bookingForm">
             <input id="customerName" value="">
             <input id="customerPhone" value="">
-            <input id="customerEmail" value="">
-            <input id="city" value="">
-            <textarea id="address"></textarea>
-            <textarea id="comment"></textarea>
-            <div id="checkoutItems"></div>
-            <span id="checkoutTotal"></span>
-            <button id="submitOrderBtn"></button>
-            <span id="submitTotal"></span>
+            <textarea id="customerComment"></textarea>
+            <span id="bookingPrice"></span>
         </form>
     </section>
 
     <section id="successSection" style="display: none;">
-        <div id="orderDetails"></div>
+        <div id="successDetails"></div>
+    </section>
+
+    <section id="myBookingsSection" style="display: none;">
+        <div id="noBookings"></div>
+        <div id="bookingsList" style="display: none;">
+            <div id="upcomingBookings">
+                <div id="upcomingBookingsItems"></div>
+            </div>
+            <div id="pastBookings" style="display: none;">
+                <div id="pastBookingsItems"></div>
+            </div>
+        </div>
     </section>
 </div>
 `;
 
-// Создаем мок корзины
-class MockCart {
-    constructor() {
-        this.items = [];
-    }
-    add(product, qty) { this.items.push({ ...product, quantity: qty }); }
-    remove(id) { this.items = this.items.filter(i => i.id !== id); }
-    getItems() { return this.items; }
-    getCount() { return this.items.reduce((s, i) => s + i.quantity, 0); }
-    getTotal() { return this.items.reduce((s, i) => s + i.price * i.quantity, 0); }
-    getDeliveryCost() { return this.getTotal() >= 2000 ? 0 : 299; }
-    getFinalTotal() { return this.getTotal() + this.getDeliveryCost(); }
-    clear() { this.items = []; }
-    isEmpty() { return this.items.length === 0; }
-    updateBadge() {}
-}
+// Мокаем BookingManager
+const BookingManager = require('../js/booking.js');
 
-global.cart = new MockCart();
+describe('App — рендеринг', () => {
 
-describe('App', () => {
+    let bookingManager;
 
     beforeEach(() => {
         document.body.innerHTML = baseHTML;
         localStorageMock.clear();
         localStorageMock.store = {};
         jest.clearAllMocks();
-        global.cart = new MockCart();
-        global.currentProduct = null;
+        bookingManager = new BookingManager();
+        global.bookingManager = bookingManager;
         global.currentCategory = 'all';
+        global.selectedDate = null;
+        global.selectedTime = null;
     });
 
     describe('renderCategories()', () => {
 
-        // Эмулируем функцию
         const renderCategories = () => {
             const container = document.getElementById('categories');
-            const currentCategory = global.currentCategory || 'all';
-
+            if (!container) return;
             container.innerHTML = CONFIG.CATEGORIES.map(cat => `
-                <button class="category-btn ${cat.id === currentCategory ? 'active' : ''}"
+                <button class="category-btn ${cat.id === global.currentCategory ? 'active' : ''}"
                         data-category="${cat.id}">
                     <span class="category-icon">${cat.icon}</span>
                     <span>${cat.name}</span>
@@ -204,342 +127,312 @@ describe('App', () => {
         });
 
         test('должна отмечать активную категорию', () => {
-            global.currentCategory = 'electronics';
+            global.currentCategory = 'hair';
             renderCategories();
 
             const activeBtn = document.querySelector('.category-btn.active');
-            expect(activeBtn.dataset.category).toBe('electronics');
+            expect(activeBtn.dataset.category).toBe('hair');
         });
 
-    });
-
-    describe('renderProducts()', () => {
-
-        const renderProducts = () => {
-            const container = document.getElementById('productsGrid');
-            const products = CONFIG.getProductsByCategory(global.currentCategory);
-
-            container.innerHTML = products.map(product => `
-                <div class="product-card-mini" data-id="${product.id}">
-                    <div class="product-card-name">${product.name}</div>
-                    <div class="product-card-price">${CONFIG.formatPrice(product.price)}</div>
-                </div>
-            `).join('');
-        };
-
-        test('должна рендерить все товары для категории "all"', () => {
+        test('категория "all" должна быть активной по умолчанию', () => {
             global.currentCategory = 'all';
-            renderProducts();
+            renderCategories();
 
-            const cards = document.querySelectorAll('.product-card-mini');
-            expect(cards.length).toBe(CONFIG.PRODUCTS.length);
-        });
-
-        test('должна фильтровать товары по категории', () => {
-            global.currentCategory = 'electronics';
-            renderProducts();
-
-            const cards = document.querySelectorAll('.product-card-mini');
-            expect(cards.length).toBe(1);
-            expect(cards[0].dataset.id).toBe('prod-001');
+            const activeBtn = document.querySelector('.category-btn.active');
+            expect(activeBtn.dataset.category).toBe('all');
         });
 
     });
 
-    describe('openProduct()', () => {
+    describe('renderServices()', () => {
 
-        const openProduct = (productId) => {
-            const product = CONFIG.getProductById(productId);
-            if (!product) return;
-
-            global.currentProduct = product;
-
-            document.getElementById('mainImage').src = product.image;
-            document.getElementById('productTitle').textContent = product.name;
-            document.getElementById('productDescription').textContent = product.description;
-            document.getElementById('productPrice').textContent = CONFIG.formatPrice(product.price);
-
-            document.getElementById('catalogSection').style.display = 'none';
-            document.getElementById('productSection').style.display = 'block';
-        };
-
-        test('должна открывать страницу товара', () => {
-            openProduct('prod-001');
-
-            expect(document.getElementById('productSection').style.display).toBe('block');
-            expect(document.getElementById('catalogSection').style.display).toBe('none');
-        });
-
-        test('должна заполнять данные товара', () => {
-            openProduct('prod-001');
-
-            expect(document.getElementById('productTitle').textContent).toBe('Тестовый товар 1');
-            expect(document.getElementById('mainImage').src).toContain('img1.jpg');
-        });
-
-        test('должна устанавливать currentProduct', () => {
-            openProduct('prod-001');
-
-            expect(global.currentProduct).toBeDefined();
-            expect(global.currentProduct.id).toBe('prod-001');
-        });
-
-        test('не должна ломаться для несуществующего товара', () => {
-            expect(() => openProduct('non-existent')).not.toThrow();
-            expect(global.currentProduct).toBeNull();
-        });
-
-    });
-
-    describe('Управление количеством', () => {
-
-        const increaseQty = () => {
-            const input = document.getElementById('quantity');
-            const val = parseInt(input.value);
-            if (val < 10) input.value = val + 1;
-        };
-
-        const decreaseQty = () => {
-            const input = document.getElementById('quantity');
-            const val = parseInt(input.value);
-            if (val > 1) input.value = val - 1;
-        };
-
-        test('increaseQty должна увеличивать количество', () => {
-            document.getElementById('quantity').value = '1';
-            increaseQty();
-            expect(document.getElementById('quantity').value).toBe('2');
-        });
-
-        test('increaseQty не должна превышать 10', () => {
-            document.getElementById('quantity').value = '10';
-            increaseQty();
-            expect(document.getElementById('quantity').value).toBe('10');
-        });
-
-        test('decreaseQty должна уменьшать количество', () => {
-            document.getElementById('quantity').value = '5';
-            decreaseQty();
-            expect(document.getElementById('quantity').value).toBe('4');
-        });
-
-        test('decreaseQty не должна опускаться ниже 1', () => {
-            document.getElementById('quantity').value = '1';
-            decreaseQty();
-            expect(document.getElementById('quantity').value).toBe('1');
-        });
-
-    });
-
-    describe('Навигация', () => {
-
-        const hideAllSections = () => {
-            document.getElementById('catalogSection').style.display = 'none';
-            document.getElementById('productSection').style.display = 'none';
-            document.getElementById('cartSection').style.display = 'none';
-            document.getElementById('checkoutSection').style.display = 'none';
-            document.getElementById('successSection').style.display = 'none';
-        };
-
-        const showCatalog = () => {
-            hideAllSections();
-            document.getElementById('catalogSection').style.display = 'block';
-        };
-
-        const showCart = () => {
-            hideAllSections();
-            document.getElementById('cartSection').style.display = 'block';
-        };
-
-        test('showCatalog должна показывать каталог', () => {
-            showCart(); // Сначала показываем корзину
-            showCatalog();
-
-            expect(document.getElementById('catalogSection').style.display).toBe('block');
-            expect(document.getElementById('cartSection').style.display).toBe('none');
-        });
-
-        test('showCart должна показывать корзину', () => {
-            showCatalog();
-            showCart();
-
-            expect(document.getElementById('cartSection').style.display).toBe('block');
-            expect(document.getElementById('catalogSection').style.display).toBe('none');
-        });
-
-        test('hideAllSections должна скрывать все секции', () => {
-            hideAllSections();
-
-            expect(document.getElementById('catalogSection').style.display).toBe('none');
-            expect(document.getElementById('productSection').style.display).toBe('none');
-            expect(document.getElementById('cartSection').style.display).toBe('none');
-            expect(document.getElementById('checkoutSection').style.display).toBe('none');
-            expect(document.getElementById('successSection').style.display).toBe('none');
-        });
-
-    });
-
-    describe('sendToLeadtex()', () => {
-
-        const sendToLeadtex = async (orderData) => {
-            const response = await fetch(CONFIG.WEBHOOK_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    contact_by: 'telegram_id',
-                    search: orderData.telegram.userId.toString(),
-                    variables: {
-                        order_id: orderData.order.orderId,
-                        order_total: orderData.order.total.toString(),
-                        customer_name: orderData.customer.name
-                    }
-                })
-            });
-
-            return response.ok;
-        };
-
-        const testOrderData = {
-            customer: { name: 'Иван', phone: '+7999', email: 'test@test.com' },
-            delivery: { city: 'Москва', address: 'Улица 1' },
-            comment: 'Тест',
-            order: {
-                items: [],
-                subtotal: 1000,
-                delivery: 0,
-                total: 1000,
-                timestamp: new Date().toISOString(),
-                orderId: 'ORD-123'
-            },
-            telegram: { userId: 123456789, userName: 'Test' }
-        };
-
-        test('должна отправлять POST запрос на WEBHOOK_URL', async () => {
-            global.fetch.mockResolvedValueOnce({ ok: true });
-
-            await sendToLeadtex(testOrderData);
-
-            expect(fetch).toHaveBeenCalledWith(
-                CONFIG.WEBHOOK_URL,
-                expect.objectContaining({
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' }
-                })
-            );
-        });
-
-        test('должна возвращать true при успешном ответе', async () => {
-            global.fetch.mockResolvedValueOnce({ ok: true });
-
-            const result = await sendToLeadtex(testOrderData);
-            expect(result).toBe(true);
-        });
-
-        test('должна возвращать false при ошибке', async () => {
-            global.fetch.mockResolvedValueOnce({ ok: false, status: 500 });
-
-            const result = await sendToLeadtex(testOrderData);
-            expect(result).toBe(false);
-        });
-
-        test('должна отправлять telegram_id в поле search', async () => {
-            global.fetch.mockResolvedValueOnce({ ok: true });
-
-            await sendToLeadtex(testOrderData);
-
-            const callBody = JSON.parse(fetch.mock.calls[0][1].body);
-            expect(callBody.contact_by).toBe('telegram_id');
-            expect(callBody.search).toBe('123456789');
-        });
-
-    });
-
-    describe('renderCart()', () => {
-
-        const renderCart = () => {
-            const container = document.getElementById('cartItems');
-            const items = cart.getItems();
-
-            container.innerHTML = items.map(item => `
-                <div class="cart-item" data-id="${item.id}">
-                    <div class="cart-item-title">${item.name}</div>
-                    <div class="cart-item-qty">x${item.quantity}</div>
-                    <div class="cart-item-price">${CONFIG.formatPrice(item.price * item.quantity)}</div>
+        const renderServices = () => {
+            const container = document.getElementById('servicesGrid');
+            if (!container) return;
+            const services = CONFIG.getServicesByCategory(global.currentCategory);
+            container.innerHTML = services.map(service => `
+                <div class="service-card" data-id="${service.id}">
+                    <div class="service-card-name">${service.name}</div>
+                    <div class="service-card-price">${CONFIG.formatPrice(service.price)}</div>
                 </div>
             `).join('');
-
-            document.getElementById('subtotal').textContent = CONFIG.formatPrice(cart.getTotal());
-            document.getElementById('total').textContent = CONFIG.formatPrice(cart.getFinalTotal());
         };
 
-        test('должна рендерить товары из корзины', () => {
-            cart.add({ id: 'test-1', name: 'Товар 1', price: 1000, image: '' }, 2);
-            cart.add({ id: 'test-2', name: 'Товар 2', price: 500, image: '' }, 1);
+        test('должна рендерить все услуги для категории "all"', () => {
+            global.currentCategory = 'all';
+            renderServices();
 
-            renderCart();
-
-            const items = document.querySelectorAll('.cart-item');
-            expect(items.length).toBe(2);
+            const cards = document.querySelectorAll('.service-card');
+            expect(cards.length).toBe(CONFIG.SERVICES.length);
         });
 
-        test('должна обновлять итоговую сумму', () => {
-            cart.add({ id: 'test-1', name: 'Товар 1', price: 1000, image: '' }, 2);
+        test('должна фильтровать услуги по категории', () => {
+            global.currentCategory = 'manicure';
+            renderServices();
 
-            renderCart();
+            const cards = document.querySelectorAll('.service-card');
+            const manicureServices = CONFIG.SERVICES.filter(s => s.category === 'manicure');
+            expect(cards.length).toBe(manicureServices.length);
+        });
 
-            expect(document.getElementById('subtotal').textContent).toContain('2');
-            expect(document.getElementById('total').textContent).toContain('2');
+        test('должна отображать цену услуги', () => {
+            global.currentCategory = 'all';
+            renderServices();
+
+            const firstCard = document.querySelector('.service-card');
+            const priceEl = firstCard.querySelector('.service-card-price');
+            expect(priceEl.textContent).toContain(CONFIG.STUDIO.currency);
+        });
+
+    });
+
+    describe('renderMasters()', () => {
+
+        const renderMasters = (serviceId) => {
+            const container = document.getElementById('mastersList');
+            if (!container) return;
+            const masters = CONFIG.getMastersForService(serviceId);
+            container.innerHTML = masters.map(master => `
+                <div class="master-card" data-id="${master.id}">
+                    <div class="master-name">${master.name}</div>
+                    <div class="master-rating">${master.rating}</div>
+                </div>
+            `).join('');
+        };
+
+        test('должна рендерить мастеров для услуги', () => {
+            renderMasters('haircut-women');
+
+            const cards = document.querySelectorAll('.master-card');
+            const hairMasters = CONFIG.getMastersForService('haircut-women');
+            expect(cards.length).toBe(hairMasters.length);
+        });
+
+        test('мастера маникюра не должны быть в списке для стрижки', () => {
+            renderMasters('haircut-women');
+
+            const cards = document.querySelectorAll('.master-card');
+            const ids = Array.from(cards).map(c => c.dataset.id);
+            // master-2 — маникюр/педикюр, не должна быть в стрижках
+            expect(ids).not.toContain('master-2');
+        });
+
+    });
+
+    describe('renderCalendar()', () => {
+
+        const renderCalendar = () => {
+            const container = document.getElementById('calendarDays');
+            if (!container) return;
+            const dates = CONFIG.getBookingDates();
+            container.innerHTML = dates.map(d => {
+                let classes = 'calendar-day';
+                if (d.isToday) classes += ' today';
+                if (!d.isWorkDay) classes += ' disabled';
+                if (global.selectedDate === d.dateString) classes += ' selected';
+                return `
+                    <div class="${classes}" data-date="${d.dateString}">
+                        <span class="day-name">${d.dayName}</span>
+                        <span class="day-number">${d.dayNumber}</span>
+                    </div>
+                `;
+            }).join('');
+        };
+
+        test('должна рендерить дни на bookingDaysAhead вперёд', () => {
+            renderCalendar();
+
+            const days = document.querySelectorAll('.calendar-day');
+            expect(days.length).toBe(CONFIG.SCHEDULE.bookingDaysAhead);
+        });
+
+        test('первый день должен быть помечен как today', () => {
+            renderCalendar();
+
+            const todayEl = document.querySelector('.calendar-day.today');
+            expect(todayEl).not.toBeNull();
+        });
+
+        test('выходные должны быть disabled', () => {
+            renderCalendar();
+
+            const days = document.querySelectorAll('.calendar-day');
+            days.forEach(day => {
+                const dateStr = day.dataset.date;
+                const date = new Date(dateStr);
+                const isWorkDay = CONFIG.SCHEDULE.workDays.includes(date.getDay());
+                if (!isWorkDay) {
+                    expect(day.classList.contains('disabled')).toBe(true);
+                }
+            });
+        });
+
+    });
+
+    describe('Навигация (показ/скрытие секций)', () => {
+
+        const showSection = (sectionId) => {
+            const sections = document.querySelectorAll('section');
+            sections.forEach(s => s.style.display = 'none');
+            const section = document.getElementById(sectionId);
+            if (section) section.style.display = 'block';
+        };
+
+        test('showSection должна показывать только указанную секцию', () => {
+            showSection('mastersSection');
+
+            expect(document.getElementById('mastersSection').style.display).toBe('block');
+            expect(document.getElementById('servicesSection').style.display).toBe('none');
+            expect(document.getElementById('bookingSection').style.display).toBe('none');
+        });
+
+        test('переключение между секциями', () => {
+            showSection('bookingSection');
+            expect(document.getElementById('bookingSection').style.display).toBe('block');
+
+            showSection('confirmationSection');
+            expect(document.getElementById('confirmationSection').style.display).toBe('block');
+            expect(document.getElementById('bookingSection').style.display).toBe('none');
+        });
+
+    });
+
+    describe('setupHeader()', () => {
+
+        const setupHeader = () => {
+            const studioLogo = document.getElementById('studioLogo');
+            const studioName = document.getElementById('studioName');
+            if (studioLogo) studioLogo.textContent = CONFIG.STUDIO.logo;
+            if (studioName) studioName.textContent = CONFIG.STUDIO.name;
+        };
+
+        test('должна устанавливать логотип и название студии', () => {
+            setupHeader();
+
+            expect(document.getElementById('studioLogo').textContent).toBe(CONFIG.STUDIO.logo);
+            expect(document.getElementById('studioName').textContent).toBe(CONFIG.STUDIO.name);
+        });
+
+    });
+
+    describe('updateBookingsBadge()', () => {
+
+        const updateBookingsBadge = () => {
+            const badge = document.getElementById('bookingsBadge');
+            const count = bookingManager.getUpcomingCount();
+            if (badge) {
+                if (count > 0) {
+                    badge.textContent = count;
+                    badge.style.display = 'flex';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+        };
+
+        test('должна скрывать бейдж при 0 записей', () => {
+            updateBookingsBadge();
+
+            const badge = document.getElementById('bookingsBadge');
+            expect(badge.style.display).toBe('none');
         });
 
     });
 
 });
 
-describe('Интеграционные тесты', () => {
+describe('sendBookingToServer()', () => {
 
     beforeEach(() => {
-        document.body.innerHTML = baseHTML;
-        global.cart = new MockCart();
+        localStorageMock.clear();
+        localStorageMock.store = {};
         jest.clearAllMocks();
+        global.window = { Telegram: undefined };
     });
 
-    test('Полный flow: каталог → товар → корзина', () => {
-        // 1. Начинаем с каталога
-        expect(document.getElementById('catalogSection')).toBeDefined();
+    const sendBookingToServer = async (booking) => {
+        let telegramId = localStorageMock.store['telegram_id'] || CONFIG.MOCK_USER.id.toString();
 
-        // 2. Открываем товар
-        global.currentProduct = CONFIG.PRODUCTS[0];
-        document.getElementById('productSection').style.display = 'block';
-        document.getElementById('catalogSection').style.display = 'none';
+        const leadtexPayload = {
+            contact_by: 'telegram_id',
+            search: telegramId,
+            variables: {
+                order_id: booking.id,
+                order_total: booking.service.price.toString(),
+                booking_date: booking.date,
+                booking_time: booking.time,
+                booking_service: booking.service.name,
+                booking_master: booking.master.name,
+                customer_name: booking.customerName,
+                customer_phone: booking.customerPhone
+            }
+        };
 
-        expect(document.getElementById('productSection').style.display).toBe('block');
+        const response = await fetch(CONFIG.WEBHOOK_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(leadtexPayload)
+        });
 
-        // 3. Добавляем в корзину
-        cart.add(CONFIG.PRODUCTS[0], 2);
+        return response;
+    };
 
-        expect(cart.getCount()).toBe(2);
-        expect(cart.isEmpty()).toBe(false);
+    const testBooking = {
+        id: 'booking-test-123',
+        service: { name: 'Женская стрижка', price: 1500, duration: 60 },
+        master: { name: 'Анна Иванова' },
+        date: '2026-03-15',
+        time: '14:00',
+        customerName: 'Тест',
+        customerPhone: '+7 (999) 000-00-00'
+    };
 
-        // 4. Переходим в корзину
-        document.getElementById('cartSection').style.display = 'block';
-        document.getElementById('productSection').style.display = 'none';
+    test('должна отправлять POST на WEBHOOK_URL', async () => {
+        global.fetch.mockResolvedValueOnce({ ok: true, json: () => ({}) });
 
-        expect(document.getElementById('cartSection').style.display).toBe('block');
+        await sendBookingToServer(testBooking);
+
+        expect(fetch).toHaveBeenCalledWith(
+            CONFIG.WEBHOOK_URL,
+            expect.objectContaining({
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+        );
     });
 
-    test('Расчет стоимости доставки', () => {
-        // Меньше порога - доставка платная
-        cart.add({ id: 't1', name: 'T1', price: 500, image: '' }, 1);
-        expect(cart.getDeliveryCost()).toBe(299);
-        expect(cart.getFinalTotal()).toBe(799);
+    test('должна отправлять contact_by: telegram_id', async () => {
+        localStorageMock.store['telegram_id'] = '987654321';
+        global.fetch.mockResolvedValueOnce({ ok: true, json: () => ({}) });
 
-        // Больше порога - доставка бесплатная
-        cart.clear();
-        cart.add({ id: 't2', name: 'T2', price: 2000, image: '' }, 1);
-        expect(cart.getDeliveryCost()).toBe(0);
-        expect(cart.getFinalTotal()).toBe(2000);
+        await sendBookingToServer(testBooking);
+
+        const body = JSON.parse(fetch.mock.calls[0][1].body);
+        expect(body.contact_by).toBe('telegram_id');
+        expect(body.search).toBe('987654321');
+    });
+
+    test('должна передавать данные бронирования в variables', async () => {
+        global.fetch.mockResolvedValueOnce({ ok: true, json: () => ({}) });
+
+        await sendBookingToServer(testBooking);
+
+        const body = JSON.parse(fetch.mock.calls[0][1].body);
+        expect(body.variables.booking_date).toBe('2026-03-15');
+        expect(body.variables.booking_time).toBe('14:00');
+        expect(body.variables.booking_service).toBe('Женская стрижка');
+        expect(body.variables.booking_master).toBe('Анна Иванова');
+        expect(body.variables.customer_name).toBe('Тест');
+        expect(body.variables.order_total).toBe('1500');
+    });
+
+    test('должна использовать MOCK_USER.id когда telegram_id нет в localStorage', async () => {
+        global.fetch.mockResolvedValueOnce({ ok: true, json: () => ({}) });
+
+        await sendBookingToServer(testBooking);
+
+        const body = JSON.parse(fetch.mock.calls[0][1].body);
+        expect(body.search).toBe(CONFIG.MOCK_USER.id.toString());
     });
 
 });

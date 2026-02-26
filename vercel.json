@@ -1,11 +1,5 @@
 {
   "version": 2,
-  "rewrites": [
-    {
-      "source": "/api/webhook",
-      "destination": "https://rb786743.leadteh.ru/inner_webhook/1f829cc9-3da3-4485-a97d-350e0d34baa1"
-    }
-  ],
   "headers": [
     {
       "source": "/(.*)",
