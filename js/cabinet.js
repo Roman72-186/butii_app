@@ -66,6 +66,12 @@ async function handleCabinetLogin(event) {
     const cleanPhone = phone.replace(/\D/g, '');
     const normalizedPhone = '+' + cleanPhone;
 
+    if (!supabase) {
+        errorEl.textContent = 'Supabase не инициализирован. Перезагрузите страницу.';
+        errorEl.style.display = 'block';
+        return;
+    }
+
     btn.disabled = true;
     btn.textContent = 'Вход...';
     errorEl.style.display = 'none';
@@ -118,7 +124,7 @@ async function handleCabinetLogin(event) {
 
     } catch (err) {
         console.error('Login error:', err);
-        errorEl.textContent = 'Ошибка подключения к серверу';
+        errorEl.textContent = err.message || 'Ошибка подключения к серверу';
         errorEl.style.display = 'block';
     } finally {
         btn.disabled = false;
@@ -168,6 +174,12 @@ async function handleCabinetRegister(event) {
     }
     const normalizedPhone = '+' + cleanPhone;
 
+    if (!supabase) {
+        errorEl.textContent = 'Supabase не инициализирован. Перезагрузите страницу.';
+        errorEl.style.display = 'block';
+        return;
+    }
+
     btn.disabled = true;
     btn.textContent = 'Регистрация...';
 
@@ -178,7 +190,12 @@ async function handleCabinetRegister(event) {
             p_name: name
         });
 
-        if (error) throw error;
+        if (error) {
+            console.error('Register RPC error:', error);
+            errorEl.textContent = error.message || 'Ошибка сервера';
+            errorEl.style.display = 'block';
+            return;
+        }
 
         if (data && data.error) {
             errorEl.textContent = data.error;
@@ -208,7 +225,7 @@ async function handleCabinetRegister(event) {
 
     } catch (err) {
         console.error('Register error:', err);
-        errorEl.textContent = 'Ошибка подключения к серверу';
+        errorEl.textContent = err.message || 'Ошибка подключения к серверу';
         errorEl.style.display = 'block';
     } finally {
         btn.disabled = false;
