@@ -1678,9 +1678,34 @@ body {
     margin-bottom: 4px;
 }
 
+.subview-list-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
 .subview-list-item-meta {
     font-size: 13px;
     color: var(--text-secondary);
+}
+
+.status-past {
+    background: var(--bg-light);
+    color: var(--text-light);
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.status-cancelled {
+    background: #ffebee;
+    color: var(--error-color);
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
 }
 
 /* Schedule */

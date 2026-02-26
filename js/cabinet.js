@@ -329,7 +329,7 @@ function renderProfileMenu() {
         items = [
             { icon: '👤', label: 'Мои данные', view: 'myData' },
             { icon: '👥', label: 'Мои рефералы', view: 'myRefs' },
-            { icon: '📁', label: 'Архив рефералов', view: 'archiveRefs' },
+            { icon: '📁', label: 'Архив записей', view: 'archiveBookings' },
             { icon: '🔑', label: 'Сменить пароль', view: 'changePassword' }
         ];
     } else if (cabinetUser.role === 'specialist') {
@@ -386,9 +386,9 @@ function showCabinetView(viewName) {
             titleEl.textContent = 'Мои рефералы';
             loadMyReferrals(contentEl);
             break;
-        case 'archiveRefs':
-            titleEl.textContent = 'Архив рефералов';
-            loadArchiveReferrals(contentEl);
+        case 'archiveBookings':
+            titleEl.textContent = 'Архив записей';
+            loadArchiveBookings(contentEl);
             break;
         case 'myData':
             titleEl.textContent = 'Мои данные';
@@ -512,15 +512,66 @@ async function loadMyReferrals(container) {
     }
 }
 
-async function loadArchiveReferrals(container) {
-    // Архив — рефералы, которые были начислены (бонусы уже выданы)
-    container.innerHTML = `
-        <div class="subview-empty-state">
-            <div class="subview-empty-icon">📁</div>
-            <h3>Архив пуст</h3>
-            <p>Здесь будут отображаться завершённые реферальные начисления</p>
-        </div>
-    `;
+async function loadArchiveBookings(container) {
+    if (!cabinetUser) return;
+
+    container.innerHTML = '<div class="subview-loading">Загрузка...</div>';
+
+    try {
+        const today = new Date().toISOString().split('T')[0];
+
+        const { data, error } = await supabase
+            .from('bookings')
+            .select('*, services(name, price), specialists(first_name, last_name)')
+            .eq('customer_phone', cabinetUser.phone)
+            .or('status.eq.completed,status.eq.cancelled,booking_date.lt.' + today)
+            .order('booking_date', { ascending: false })
+            .limit(50);
+
+        if (error) throw error;
+
+        if (!data || data.length === 0) {
+            container.innerHTML = `
+                <div class="subview-empty-state">
+                    <div class="subview-empty-icon">📁</div>
+                    <h3>Архив пуст</h3>
+                    <p>Прошедшие и отменённые записи появятся здесь</p>
+                </div>
+            `;
+            return;
+        }
+
+        container.innerHTML = `
+            <div class="subview-list">
+                ${data.map(b => {
+                    const masterName = b.specialists
+                        ? (b.specialists.first_name + ' ' + b.specialists.last_name)
+                        : (b.customer_name || '—');
+                    const statusLabel = b.status === 'cancelled' ? 'Отменена'
+                        : b.status === 'completed' ? 'Завершена' : 'Прошла';
+                    const statusClass = b.status === 'cancelled' ? 'status-cancelled' : 'status-past';
+
+                    return `
+                        <div class="subview-list-item">
+                            <div class="subview-list-item-header">
+                                <div class="subview-list-item-name">${b.services?.name || 'Услуга'}</div>
+                                <span class="booking-item-status ${statusClass}">${statusLabel}</span>
+                            </div>
+                            <div class="subview-list-item-meta">
+                                ${b.booking_date} в ${b.booking_time ? b.booking_time.slice(0,5) : ''}
+                            </div>
+                            <div class="subview-list-item-meta">
+                                Мастер: ${masterName} | ${b.price || 0} ₽
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
+    } catch (err) {
+        console.error('Load archive bookings error:', err);
+        container.innerHTML = '<div class="subview-error">Ошибка загрузки</div>';
+    }
 }
 
 // ===================================
