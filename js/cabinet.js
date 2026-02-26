@@ -12,10 +12,10 @@ let cabinetUser = null; // { id, name, phone, role, ... }
 
 function showLoginForm() {
     document.getElementById('cabinetGuest').style.display = 'none';
+    document.getElementById('cabinetRegister').style.display = 'none';
     document.getElementById('cabinetLogin').style.display = 'block';
 
-    // Инициализировать маску телефона для кабинета
-    initCabinetPhoneMask();
+    initCabinetPhoneMask('cabinetPhone');
 }
 
 function hideLoginForm() {
@@ -26,6 +26,26 @@ function hideLoginForm() {
     document.getElementById('cabinetPhone').value = '';
     document.getElementById('cabinetPassword').value = '';
     document.getElementById('cabinetLoginError').style.display = 'none';
+}
+
+function showRegisterForm() {
+    document.getElementById('cabinetGuest').style.display = 'none';
+    document.getElementById('cabinetLogin').style.display = 'none';
+    document.getElementById('cabinetRegister').style.display = 'block';
+
+    initCabinetPhoneMask('registerPhone');
+}
+
+function hideRegisterForm() {
+    document.getElementById('cabinetRegister').style.display = 'none';
+    document.getElementById('cabinetGuest').style.display = 'block';
+
+    // Очистить форму
+    document.getElementById('registerName').value = '';
+    document.getElementById('registerPhone').value = '';
+    document.getElementById('registerPassword').value = '';
+    document.getElementById('registerPasswordConfirm').value = '';
+    document.getElementById('cabinetRegisterError').style.display = 'none';
 }
 
 async function handleCabinetLogin(event) {
@@ -51,43 +71,42 @@ async function handleCabinetLogin(event) {
     errorEl.style.display = 'none';
 
     try {
-        // Единая функция admin_login проверяет и админов, и специалистов
-        const { data, error } = await supabase.rpc('admin_login', {
+        // 1. Проверяем среди админов и специалистов
+        const { data: staffData, error: staffError } = await supabase.rpc('admin_login', {
             p_phone: normalizedPhone,
             p_password: password
         });
 
-        if (error) throw error;
+        if (staffError) throw staffError;
 
-        // data — это JSON объект с role, id, name (или error)
-        if (data && data.id && !data.error) {
+        if (staffData && staffData.id && !staffData.error) {
             cabinetUser = {
-                id: data.id,
-                name: data.name,
+                id: staffData.id,
+                name: staffData.name,
                 phone: normalizedPhone,
-                role: data.role, // 'admin' или 'specialist'
-                specialty: data.specialty || null
+                role: staffData.role,
+                specialty: staffData.specialty || null
             };
             onLoginSuccess();
             return;
         }
 
-        // Попробовать найти клиента по телефону (у клиентов пока нет пароля)
-        const { data: clientData, error: clientError } = await supabase
-            .from('clients')
-            .select('*')
-            .eq('phone', normalizedPhone)
-            .single();
+        // 2. Проверяем среди клиентов
+        const { data: clientData, error: clientError } = await supabase.rpc('client_login', {
+            p_phone: normalizedPhone,
+            p_password: password
+        });
 
-        if (clientData) {
+        if (clientError) throw clientError;
+
+        if (clientData && clientData.id && !clientData.error) {
             cabinetUser = {
                 id: clientData.id,
-                name: clientData.first_name || 'Клиент',
+                name: clientData.name,
                 phone: normalizedPhone,
                 role: 'client',
                 bonuses: clientData.bonuses || 0,
-                referral_code: clientData.referral_code || null,
-                referred_by: clientData.referred_by || null
+                referral_code: clientData.referral_code || null
             };
             onLoginSuccess();
             return;
@@ -104,6 +123,96 @@ async function handleCabinetLogin(event) {
     } finally {
         btn.disabled = false;
         btn.textContent = 'Войти';
+    }
+}
+
+// ===================================
+// РЕГИСТРАЦИЯ
+// ===================================
+
+async function handleCabinetRegister(event) {
+    event.preventDefault();
+
+    const name = document.getElementById('registerName').value.trim();
+    const phone = document.getElementById('registerPhone').value.trim();
+    const password = document.getElementById('registerPassword').value;
+    const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
+    const errorEl = document.getElementById('cabinetRegisterError');
+    const btn = document.getElementById('cabinetRegisterBtn');
+
+    errorEl.style.display = 'none';
+
+    if (!name || !phone || !password) {
+        errorEl.textContent = 'Заполните все поля';
+        errorEl.style.display = 'block';
+        return;
+    }
+
+    if (password.length < 6) {
+        errorEl.textContent = 'Пароль должен быть не менее 6 символов';
+        errorEl.style.display = 'block';
+        return;
+    }
+
+    if (password !== passwordConfirm) {
+        errorEl.textContent = 'Пароли не совпадают';
+        errorEl.style.display = 'block';
+        return;
+    }
+
+    const cleanPhone = phone.replace(/\D/g, '');
+    if (cleanPhone.length < 11) {
+        errorEl.textContent = 'Введите корректный номер телефона';
+        errorEl.style.display = 'block';
+        return;
+    }
+    const normalizedPhone = '+' + cleanPhone;
+
+    btn.disabled = true;
+    btn.textContent = 'Регистрация...';
+
+    try {
+        const { data, error } = await supabase.rpc('client_register', {
+            p_phone: normalizedPhone,
+            p_password: password,
+            p_name: name
+        });
+
+        if (error) throw error;
+
+        if (data && data.error) {
+            errorEl.textContent = data.error;
+            errorEl.style.display = 'block';
+            return;
+        }
+
+        if (data && data.id) {
+            cabinetUser = {
+                id: data.id,
+                name: data.name,
+                phone: normalizedPhone,
+                role: 'client',
+                bonuses: data.bonuses || 0,
+                referral_code: data.referral_code || null
+            };
+
+            // Скрыть форму регистрации
+            document.getElementById('cabinetRegister').style.display = 'none';
+
+            onLoginSuccess();
+            return;
+        }
+
+        errorEl.textContent = 'Ошибка регистрации. Попробуйте ещё раз.';
+        errorEl.style.display = 'block';
+
+    } catch (err) {
+        console.error('Register error:', err);
+        errorEl.textContent = 'Ошибка подключения к серверу';
+        errorEl.style.display = 'block';
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Зарегистрироваться';
     }
 }
 
@@ -133,9 +242,11 @@ function onLoginSuccess() {
 function handleCabinetLogout() {
     cabinetUser = null;
 
-    // Скрыть профиль и подвид
+    // Скрыть профиль, подвид и формы
     document.getElementById('cabinetProfile').style.display = 'none';
     document.getElementById('cabinetSubview').style.display = 'none';
+    document.getElementById('cabinetLogin').style.display = 'none';
+    document.getElementById('cabinetRegister').style.display = 'none';
 
     // Показать гостевой вид
     document.getElementById('cabinetGuest').style.display = 'block';
@@ -771,8 +882,8 @@ function copyRefLink() {
 // МАСКА ТЕЛЕФОНА КАБИНЕТА
 // ===================================
 
-function initCabinetPhoneMask() {
-    const phoneInput = document.getElementById('cabinetPhone');
+function initCabinetPhoneMask(inputId) {
+    const phoneInput = document.getElementById(inputId);
     if (!phoneInput || phoneInput.dataset.masked) return;
 
     phoneInput.dataset.masked = 'true';

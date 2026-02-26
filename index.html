@@ -268,6 +268,42 @@
                         <div id="cabinetLoginError" class="login-error" style="display:none;"></div>
                         <button type="submit" class="btn-primary" id="cabinetLoginBtn">Войти</button>
                     </form>
+                    <p class="auth-switch">Нет аккаунта? <a href="#" onclick="showRegisterForm(); return false;">Зарегистрироваться</a></p>
+                </div>
+            </div>
+
+            <!-- Форма регистрации -->
+            <div id="cabinetRegister" style="display:none;">
+                <div class="section-header">
+                    <button class="back-btn" onclick="hideRegisterForm()">
+                        <span class="back-icon">←</span> Назад
+                    </button>
+                    <h2>Регистрация</h2>
+                </div>
+
+                <div class="login-form-wrap">
+                    <p class="login-hint">Создайте аккаунт клиента</p>
+                    <form onsubmit="handleCabinetRegister(event)">
+                        <div class="form-group">
+                            <label>Имя</label>
+                            <input type="text" id="registerName" placeholder="Ваше имя" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Телефон</label>
+                            <input type="tel" id="registerPhone" placeholder="+7 (___) ___-__-__" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Пароль</label>
+                            <input type="password" id="registerPassword" placeholder="Минимум 6 символов" required minlength="6">
+                        </div>
+                        <div class="form-group">
+                            <label>Подтвердите пароль</label>
+                            <input type="password" id="registerPasswordConfirm" placeholder="Повторите пароль" required>
+                        </div>
+                        <div id="cabinetRegisterError" class="login-error" style="display:none;"></div>
+                        <button type="submit" class="btn-primary" id="cabinetRegisterBtn">Зарегистрироваться</button>
+                    </form>
+                    <p class="auth-switch">Уже есть аккаунт? <a href="#" onclick="showLoginForm(); return false;">Войти</a></p>
                 </div>
             </div>
 
