@@ -35,6 +35,16 @@ function init() {
     // Инициализация маски телефона
     initPhoneMask();
 
+    // Установить дефолтную видимость табов (гость)
+    if (typeof updateAuthTabs === 'function') {
+        updateAuthTabs();
+    }
+
+    // Проверить сохранённую сессию (авто-вход)
+    if (typeof checkCabinetSession === 'function') {
+        checkCabinetSession();
+    }
+
     // Скрыть лоадер и показать приложение
     setTimeout(() => {
         document.getElementById('loader').style.display = 'none';

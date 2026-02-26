@@ -1739,6 +1739,304 @@ body {
     color: var(--text-secondary);
 }
 
+/* ===================================
+   ROLE TOGGLE (Login/Register forms)
+   =================================== */
+
+.role-toggle {
+    display: flex;
+    background: var(--bg-light);
+    border-radius: var(--radius-md);
+    padding: 4px;
+    margin-bottom: 20px;
+}
+
+.role-toggle-btn {
+    flex: 1;
+    padding: 10px 16px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.role-toggle-btn.active {
+    background: var(--bg-white);
+    color: var(--primary-color);
+    box-shadow: var(--shadow-sm);
+}
+
+.role-toggle-btn:active {
+    transform: scale(0.97);
+}
+
+/* Register notice for specialist */
+.register-notice {
+    text-align: center;
+    padding: 32px 16px;
+}
+
+.register-notice-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+}
+
+.register-notice h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+}
+
+.register-notice p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+/* ===================================
+   SPECIALIST PHOTO
+   =================================== */
+
+.specialist-photo-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.specialist-photo-preview {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--primary-light);
+}
+
+.specialist-photo-placeholder {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: var(--bg-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    border: 3px dashed var(--border-color);
+}
+
+.btn-upload {
+    background: var(--bg-light);
+    color: var(--primary-color);
+    padding: 8px 16px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13px;
+    transition: var(--transition);
+}
+
+.btn-upload:active {
+    background: var(--primary-light);
+}
+
+/* ===================================
+   SCHEDULE CALENDAR GRID
+   =================================== */
+
+.schedule-calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    padding: 16px;
+    background: var(--bg-white);
+    border-radius: var(--radius-md);
+    margin-bottom: 16px;
+}
+
+.schedule-calendar-header {
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    padding: 4px 0 8px;
+}
+
+.schedule-calendar-day {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 1;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: var(--transition);
+    background: var(--bg-light);
+    position: relative;
+}
+
+.schedule-calendar-day:active {
+    transform: scale(0.9);
+}
+
+.schedule-calendar-day.past {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.schedule-calendar-day.past:active {
+    transform: none;
+}
+
+.schedule-calendar-day.today {
+    border: 2px solid var(--primary-color);
+}
+
+.schedule-calendar-day.work-day {
+    background: var(--primary-color);
+}
+
+.schedule-calendar-day.work-day .schedule-day-num {
+    color: white;
+    font-weight: 700;
+}
+
+.schedule-day-num {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Schedule sections */
+.schedule-section-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+    padding: 12px 0;
+}
+
+.schedule-work-dates-list {
+    padding: 0 16px 16px;
+}
+
+.btn-remove {
+    background: #ffebee;
+    color: var(--error-color);
+    padding: 6px 12px;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-remove:active {
+    background: #ffcdd2;
+}
+
+/* Schedule time modal */
+.schedule-time-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 300;
+    padding: 16px;
+}
+
+.schedule-time-modal-content {
+    background: var(--bg-white);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    width: 100%;
+    max-width: 340px;
+}
+
+.schedule-time-modal-content h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+    text-align: center;
+}
+
+.schedule-time-inputs {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.schedule-time-inputs .form-group {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+.schedule-time-inputs input[type="time"] {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    font-size: 16px;
+    text-align: center;
+}
+
+.schedule-time-inputs input[type="time"]:focus {
+    border-color: var(--primary-color);
+    outline: none;
+}
+
+.schedule-time-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.schedule-time-actions .btn-primary,
+.schedule-time-actions .btn-secondary {
+    justify-content: center;
+}
+
+/* Form select */
+.form-select {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    font-size: 15px;
+    font-family: inherit;
+    background: var(--bg-white);
+    color: var(--text-primary);
+    transition: var(--transition);
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23757575' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 16px center;
+}
+
+.form-select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(233, 30, 140, 0.1);
+}
+
+.form-hint {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 6px;
+}
+
 /* Bonuses section */
 .bonuses-section {
     max-width: 1200px;

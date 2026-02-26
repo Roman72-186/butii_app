@@ -255,7 +255,11 @@
                 </div>
 
                 <div class="login-form-wrap">
-                    <p class="login-hint">Для сотрудников и клиентов</p>
+                    <!-- Переключатель роли -->
+                    <div class="role-toggle" id="loginRoleToggle">
+                        <button type="button" class="role-toggle-btn active" data-role="client" onclick="switchLoginRole('client')">Клиент</button>
+                        <button type="button" class="role-toggle-btn" data-role="specialist" onclick="switchLoginRole('specialist')">Специалист</button>
+                    </div>
                     <form onsubmit="handleCabinetLogin(event)">
                         <div class="form-group">
                             <label>Телефон</label>
@@ -268,7 +272,7 @@
                         <div id="cabinetLoginError" class="login-error" style="display:none;"></div>
                         <button type="submit" class="btn-primary" id="cabinetLoginBtn">Войти</button>
                     </form>
-                    <p class="auth-switch">Нет аккаунта? <a href="#" onclick="showRegisterForm(); return false;">Зарегистрироваться</a></p>
+                    <p class="auth-switch" id="loginRegisterLink">Нет аккаунта? <a href="#" onclick="showRegisterForm(); return false;">Зарегистрироваться</a></p>
                 </div>
             </div>
 
@@ -282,27 +286,45 @@
                 </div>
 
                 <div class="login-form-wrap">
-                    <p class="login-hint">Создайте аккаунт клиента</p>
-                    <form onsubmit="handleCabinetRegister(event)">
-                        <div class="form-group">
-                            <label>Имя</label>
-                            <input type="text" id="registerName" placeholder="Ваше имя" required>
+                    <!-- Переключатель роли -->
+                    <div class="role-toggle" id="registerRoleToggle">
+                        <button type="button" class="role-toggle-btn active" data-role="client" onclick="switchRegisterRole('client')">Клиент</button>
+                        <button type="button" class="role-toggle-btn" data-role="specialist" onclick="switchRegisterRole('specialist')">Специалист</button>
+                    </div>
+
+                    <!-- Форма регистрации клиента -->
+                    <div id="registerClientForm">
+                        <form onsubmit="handleCabinetRegister(event)">
+                            <div class="form-group">
+                                <label>Имя</label>
+                                <input type="text" id="registerName" placeholder="Ваше имя" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Телефон</label>
+                                <input type="tel" id="registerPhone" placeholder="+7 (___) ___-__-__" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Пароль</label>
+                                <input type="password" id="registerPassword" placeholder="Минимум 6 символов" required minlength="6">
+                            </div>
+                            <div class="form-group">
+                                <label>Подтвердите пароль</label>
+                                <input type="password" id="registerPasswordConfirm" placeholder="Повторите пароль" required>
+                            </div>
+                            <div id="cabinetRegisterError" class="login-error" style="display:none;"></div>
+                            <button type="submit" class="btn-primary" id="cabinetRegisterBtn">Зарегистрироваться</button>
+                        </form>
+                    </div>
+
+                    <!-- Заглушка для специалиста -->
+                    <div id="registerSpecialistNotice" style="display:none;">
+                        <div class="register-notice">
+                            <div class="register-notice-icon">✂️</div>
+                            <h3>Регистрация специалистов</h3>
+                            <p>Аккаунт специалиста создаёт администратор салона. Обратитесь к руководству для получения доступа.</p>
                         </div>
-                        <div class="form-group">
-                            <label>Телефон</label>
-                            <input type="tel" id="registerPhone" placeholder="+7 (___) ___-__-__" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Пароль</label>
-                            <input type="password" id="registerPassword" placeholder="Минимум 6 символов" required minlength="6">
-                        </div>
-                        <div class="form-group">
-                            <label>Подтвердите пароль</label>
-                            <input type="password" id="registerPasswordConfirm" placeholder="Повторите пароль" required>
-                        </div>
-                        <div id="cabinetRegisterError" class="login-error" style="display:none;"></div>
-                        <button type="submit" class="btn-primary" id="cabinetRegisterBtn">Зарегистрироваться</button>
-                    </form>
+                    </div>
+
                     <p class="auth-switch">Уже есть аккаунт? <a href="#" onclick="showLoginForm(); return false;">Войти</a></p>
                 </div>
             </div>
@@ -348,12 +370,12 @@
                 <span class="tab-btn-icon">✨</span>
                 <span class="tab-btn-label">Услуги</span>
             </button>
-            <button class="tab-btn auth-required" data-tab="bookings" onclick="switchTab('bookings')" style="display:none;">
+            <button class="tab-btn" data-tab="bookings" onclick="switchTab('bookings')" style="display:none;">
                 <span class="tab-btn-icon">📋</span>
                 <span class="tab-btn-label">Записи</span>
                 <span class="tab-btn-badge" id="tabBookingsBadge" style="display:none;">0</span>
             </button>
-            <button class="tab-btn auth-required" data-tab="bonuses" onclick="switchTab('bonuses')" style="display:none;">
+            <button class="tab-btn" data-tab="bonuses" onclick="switchTab('bonuses')" style="display:none;">
                 <span class="tab-btn-icon">🎁</span>
                 <span class="tab-btn-label">Бонусы</span>
             </button>

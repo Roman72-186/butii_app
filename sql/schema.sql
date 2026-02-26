@@ -80,6 +80,17 @@ CREATE TABLE specialist_schedule (
     UNIQUE(specialist_id, day_of_week)
 );
 
+-- Рабочие даты специалиста (конкретные даты, не шаблон)
+CREATE TABLE specialist_work_dates (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    specialist_id UUID REFERENCES specialists(id) ON DELETE CASCADE,
+    work_date DATE NOT NULL,
+    start_time TIME NOT NULL DEFAULT '09:00',
+    end_time TIME NOT NULL DEFAULT '20:00',
+    created_at TIMESTAMPTZ DEFAULT now(),
+    UNIQUE(specialist_id, work_date)
+);
+
 -- Заблокированные слоты (ручная блокировка специалистом)
 CREATE TABLE blocked_slots (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -118,6 +129,7 @@ CREATE INDEX idx_bookings_client ON bookings(client_id);
 CREATE INDEX idx_bookings_status ON bookings(status);
 CREATE INDEX idx_blocked_slots_specialist_date ON blocked_slots(specialist_id, date);
 CREATE INDEX idx_clients_telegram_id ON clients(telegram_id);
+CREATE INDEX idx_specialist_work_dates ON specialist_work_dates(specialist_id, work_date);
 
 -- =============================================
 -- RPC: Авторизация (телефон + пароль)
@@ -220,7 +232,52 @@ END;
 $$;
 
 -- =============================================
+-- RPC: Обновление профиля специалиста
+-- =============================================
+
+CREATE OR REPLACE FUNCTION update_specialist_profile(
+    p_specialist_id UUID,
+    p_first_name TEXT,
+    p_last_name TEXT,
+    p_specialty TEXT,
+    p_skills_summary TEXT,
+    p_photo_url TEXT DEFAULT NULL
+)
+RETURNS JSON
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+    v_specialist RECORD;
+BEGIN
+    UPDATE specialists
+    SET first_name = p_first_name,
+        last_name = p_last_name,
+        specialty = p_specialty,
+        skills_summary = p_skills_summary,
+        photo_url = COALESCE(p_photo_url, photo_url)
+    WHERE id = p_specialist_id AND is_active = true
+    RETURNING id, first_name, last_name, specialty, skills_summary, photo_url
+    INTO v_specialist;
+
+    IF NOT FOUND THEN
+        RETURN json_build_object('error', 'Специалист не найден');
+    END IF;
+
+    RETURN json_build_object(
+        'id', v_specialist.id,
+        'first_name', v_specialist.first_name,
+        'last_name', v_specialist.last_name,
+        'specialty', v_specialist.specialty,
+        'skills_summary', v_specialist.skills_summary,
+        'photo_url', v_specialist.photo_url
+    );
+END;
+$$;
+
+-- =============================================
 -- RPC: Доступные слоты для записи
+-- Проверяет specialist_work_dates, затем specialist_schedule
 -- =============================================
 
 CREATE OR REPLACE FUNCTION get_available_slots(
@@ -233,37 +290,58 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 DECLARE
-    v_schedule RECORD;
+    v_start_time TIME;
+    v_end_time TIME;
     v_day_of_week INTEGER;
+    v_schedule RECORD;
+    v_work_date RECORD;
     v_slot_time TIME;
-    v_slot_end TIME;
     v_slots JSON[];
     v_is_blocked BOOLEAN;
     v_is_booked BOOLEAN;
+    v_found BOOLEAN := false;
 BEGIN
-    v_day_of_week := EXTRACT(DOW FROM p_date);
+    -- 1. Проверяем specialist_work_dates (приоритет)
+    SELECT start_time, end_time
+    INTO v_work_date
+    FROM specialist_work_dates
+    WHERE specialist_id = p_specialist_id AND work_date = p_date;
 
-    -- Получаем расписание на этот день
-    SELECT start_time, end_time, is_working
-    INTO v_schedule
-    FROM specialist_schedule
-    WHERE specialist_id = p_specialist_id AND day_of_week = v_day_of_week;
-
-    IF NOT FOUND OR NOT v_schedule.is_working THEN
-        RETURN '[]'::JSON;
+    IF FOUND THEN
+        v_start_time := v_work_date.start_time;
+        v_end_time := v_work_date.end_time;
+        v_found := true;
     END IF;
 
-    v_slots := ARRAY[]::JSON[];
-    v_slot_time := v_schedule.start_time;
+    -- 2. Если нет в work_dates, проверяем шаблон specialist_schedule
+    IF NOT v_found THEN
+        v_day_of_week := EXTRACT(DOW FROM p_date);
 
-    WHILE v_slot_time + (p_duration || ' minutes')::INTERVAL <= v_schedule.end_time LOOP
+        SELECT start_time, end_time, is_working
+        INTO v_schedule
+        FROM specialist_schedule
+        WHERE specialist_id = p_specialist_id AND day_of_week = v_day_of_week;
+
+        IF NOT FOUND OR NOT v_schedule.is_working THEN
+            RETURN '[]'::JSON;
+        END IF;
+
+        v_start_time := v_schedule.start_time;
+        v_end_time := v_schedule.end_time;
+    END IF;
+
+    -- 3. Генерируем слоты
+    v_slots := ARRAY[]::JSON[];
+    v_slot_time := v_start_time;
+
+    WHILE v_slot_time + (p_duration || ' minutes')::INTERVAL <= v_end_time LOOP
         -- Проверяем блокировку
         SELECT EXISTS(
             SELECT 1 FROM blocked_slots
             WHERE specialist_id = p_specialist_id AND date = p_date AND time = v_slot_time
         ) INTO v_is_blocked;
 
-        -- Проверяем занятость (все слоты, которые пересекаются с этим)
+        -- Проверяем занятость
         SELECT EXISTS(
             SELECT 1 FROM bookings
             WHERE specialist_id = p_specialist_id
@@ -371,6 +449,7 @@ ALTER TABLE bookings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE specialist_schedule ENABLE ROW LEVEL SECURITY;
 ALTER TABLE blocked_slots ENABLE ROW LEVEL SECURITY;
 ALTER TABLE specialist_services ENABLE ROW LEVEL SECURITY;
+ALTER TABLE specialist_work_dates ENABLE ROW LEVEL SECURITY;
 
 -- Разрешаем чтение для анонимных пользователей (Mini App)
 CREATE POLICY "Public read specialists" ON specialists FOR SELECT USING (is_active = true);
@@ -383,6 +462,19 @@ CREATE POLICY "Public read specialist_services" ON specialist_services FOR SELEC
 CREATE POLICY "Public insert bookings" ON bookings FOR INSERT WITH CHECK (true);
 CREATE POLICY "Public read bookings" ON bookings FOR SELECT USING (true);
 CREATE POLICY "Public update bookings" ON bookings FOR UPDATE USING (true);
+
+-- Рабочие даты специалиста
+CREATE POLICY "Public read work_dates" ON specialist_work_dates FOR SELECT USING (true);
+CREATE POLICY "Public insert work_dates" ON specialist_work_dates FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public update work_dates" ON specialist_work_dates FOR UPDATE USING (true);
+CREATE POLICY "Public delete work_dates" ON specialist_work_dates FOR DELETE USING (true);
+
+-- Управление blocked_slots
+CREATE POLICY "Public insert blocked_slots" ON blocked_slots FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public delete blocked_slots" ON blocked_slots FOR DELETE USING (true);
+
+-- Обновление профиля специалиста
+CREATE POLICY "Public update specialists" ON specialists FOR UPDATE USING (true);
 
 -- Клиенты
 CREATE POLICY "Public insert clients" ON clients FOR INSERT WITH CHECK (true);

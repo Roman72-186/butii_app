@@ -74,3 +74,5 @@ Supabase credentials go in `js/supabase-config.js` (SUPABASE_URL, SUPABASE_ANON_
 ## Language
 
 All UI text, comments, and documentation are in **Russian**. Maintain this convention.
+
+**All responses, commit messages, questions, and reports from Claude must also be written in Russian.**
