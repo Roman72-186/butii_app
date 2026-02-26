@@ -9,9 +9,9 @@ var cabinetUser = null; // { id, name, phone, role, ... }
 // Ключ для localStorage
 var SESSION_KEY = 'beauty_cabinet_session';
 
-// Текущая роль на формах входа/регистрации
-var loginRole = 'client';      // 'client' или 'specialist'
-var registerRole = 'client';   // 'client' или 'specialist'
+// Тройной клик на логотип — счётчик
+var logoClickCount = 0;
+var logoClickTimer = null;
 
 // ===================================
 // СЕССИЯ (localStorage)
@@ -105,7 +105,7 @@ async function checkCabinetSession() {
 }
 
 // ===================================
-// НАВИГАЦИЯ ФОРМ
+// НАВИГАЦИЯ ФОРМ (клиент)
 // ===================================
 
 function showLoginForm() {
@@ -113,8 +113,6 @@ function showLoginForm() {
     document.getElementById('cabinetRegister').style.display = 'none';
     document.getElementById('cabinetLogin').style.display = 'block';
 
-    // Сбросить на клиента
-    switchLoginRole('client');
     initCabinetPhoneMask('cabinetPhone');
 }
 
@@ -132,8 +130,6 @@ function showRegisterForm() {
     document.getElementById('cabinetLogin').style.display = 'none';
     document.getElementById('cabinetRegister').style.display = 'block';
 
-    // Сбросить на клиента
-    switchRegisterRole('client');
     initCabinetPhoneMask('registerPhone');
 }
 
@@ -149,50 +145,110 @@ function hideRegisterForm() {
 }
 
 // ===================================
-// ПЕРЕКЛЮЧАТЕЛИ РОЛИ НА ФОРМАХ
+// СКРЫТЫЙ ВХОД СОТРУДНИКА (тройной клик на логотип)
 // ===================================
 
-function switchLoginRole(role) {
-    loginRole = role;
-    var toggle = document.getElementById('loginRoleToggle');
-    if (toggle) {
-        toggle.querySelectorAll('.role-toggle-btn').forEach(function(btn) {
-            btn.classList.toggle('active', btn.dataset.role === role);
-        });
-    }
+function initLogoTripleClick() {
+    var logo = document.getElementById('headerLogo');
+    if (!logo) return;
 
-    // Скрыть/показать ссылку на регистрацию
-    var regLink = document.getElementById('loginRegisterLink');
-    if (regLink) {
-        regLink.style.display = role === 'client' ? '' : 'none';
-    }
+    logo.addEventListener('click', function(e) {
+        logoClickCount++;
 
-    // Сбросить ошибку
-    var errorEl = document.getElementById('cabinetLoginError');
-    if (errorEl) errorEl.style.display = 'none';
+        if (logoClickTimer) clearTimeout(logoClickTimer);
+
+        if (logoClickCount >= 3) {
+            logoClickCount = 0;
+            e.preventDefault();
+            e.stopPropagation();
+            showStaffLogin();
+            return;
+        }
+
+        logoClickTimer = setTimeout(function() {
+            logoClickCount = 0;
+        }, 600);
+    });
 }
 
-function switchRegisterRole(role) {
-    registerRole = role;
-    var toggle = document.getElementById('registerRoleToggle');
-    if (toggle) {
-        toggle.querySelectorAll('.role-toggle-btn').forEach(function(btn) {
-            btn.classList.toggle('active', btn.dataset.role === role);
-        });
+function showStaffLogin() {
+    document.getElementById('staffLoginOverlay').style.display = 'flex';
+    initCabinetPhoneMask('staffPhone');
+
+    // Очистить форму
+    document.getElementById('staffPhone').value = '';
+    document.getElementById('staffPassword').value = '';
+    document.getElementById('staffLoginError').style.display = 'none';
+}
+
+function hideStaffLogin() {
+    document.getElementById('staffLoginOverlay').style.display = 'none';
+}
+
+async function handleStaffLogin(event) {
+    event.preventDefault();
+
+    var phone = document.getElementById('staffPhone').value.trim();
+    var password = document.getElementById('staffPassword').value;
+    var errorEl = document.getElementById('staffLoginError');
+    var btn = document.getElementById('staffLoginBtn');
+
+    if (!phone || !password) {
+        errorEl.textContent = 'Заполните все поля';
+        errorEl.style.display = 'block';
+        return;
     }
 
-    // Клиент — показать форму, скрыть заглушку
-    // Специалист — скрыть форму, показать заглушку
-    document.getElementById('registerClientForm').style.display = role === 'client' ? '' : 'none';
-    document.getElementById('registerSpecialistNotice').style.display = role === 'specialist' ? '' : 'none';
+    var cleanPhone = phone.replace(/\D/g, '');
+    var normalizedPhone = '+' + cleanPhone;
 
-    // Сбросить ошибку
-    var errorEl = document.getElementById('cabinetRegisterError');
-    if (errorEl) errorEl.style.display = 'none';
+    if (!supabase) {
+        errorEl.textContent = 'Supabase не инициализирован';
+        errorEl.style.display = 'block';
+        return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Вход...';
+    errorEl.style.display = 'none';
+
+    try {
+        var { data: staffData, error: staffError } = await supabase.rpc('admin_login', {
+            p_phone: normalizedPhone,
+            p_password: password
+        });
+
+        if (staffError) throw staffError;
+
+        if (staffData && staffData.id && !staffData.error) {
+            cabinetUser = {
+                id: staffData.id,
+                name: staffData.name,
+                phone: normalizedPhone,
+                role: staffData.role,
+                specialty: staffData.specialty || null
+            };
+            saveSession(cabinetUser);
+            hideStaffLogin();
+            onLoginSuccess();
+            return;
+        }
+
+        errorEl.textContent = 'Неверный телефон или пароль';
+        errorEl.style.display = 'block';
+
+    } catch (err) {
+        console.error('Staff login error:', err);
+        errorEl.textContent = err.message || 'Ошибка подключения';
+        errorEl.style.display = 'block';
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Войти';
+    }
 }
 
 // ===================================
-// ВХОД (единая форма, роль по переключателю)
+// ВХОД КЛИЕНТА
 // ===================================
 
 async function handleCabinetLogin(event) {
@@ -223,49 +279,25 @@ async function handleCabinetLogin(event) {
     errorEl.style.display = 'none';
 
     try {
-        if (loginRole === 'specialist') {
-            // Вход специалиста/админа
-            var { data: staffData, error: staffError } = await supabase.rpc('admin_login', {
-                p_phone: normalizedPhone,
-                p_password: password
-            });
+        var { data: clientData, error: clientError } = await supabase.rpc('client_login', {
+            p_phone: normalizedPhone,
+            p_password: password
+        });
 
-            if (staffError) throw staffError;
+        if (clientError) throw clientError;
 
-            if (staffData && staffData.id && !staffData.error) {
-                cabinetUser = {
-                    id: staffData.id,
-                    name: staffData.name,
-                    phone: normalizedPhone,
-                    role: staffData.role,
-                    specialty: staffData.specialty || null
-                };
-                saveSession(cabinetUser);
-                onLoginSuccess();
-                return;
-            }
-        } else {
-            // Вход клиента
-            var { data: clientData, error: clientError } = await supabase.rpc('client_login', {
-                p_phone: normalizedPhone,
-                p_password: password
-            });
-
-            if (clientError) throw clientError;
-
-            if (clientData && clientData.id && !clientData.error) {
-                cabinetUser = {
-                    id: clientData.id,
-                    name: clientData.name,
-                    phone: normalizedPhone,
-                    role: 'client',
-                    bonuses: clientData.bonuses || 0,
-                    referral_code: clientData.referral_code || null
-                };
-                saveSession(cabinetUser);
-                onLoginSuccess();
-                return;
-            }
+        if (clientData && clientData.id && !clientData.error) {
+            cabinetUser = {
+                id: clientData.id,
+                name: clientData.name,
+                phone: normalizedPhone,
+                role: 'client',
+                bonuses: clientData.bonuses || 0,
+                referral_code: clientData.referral_code || null
+            };
+            saveSession(cabinetUser);
+            onLoginSuccess();
+            return;
         }
 
         errorEl.textContent = 'Неверный телефон или пароль';
@@ -1740,3 +1772,11 @@ function initCabinetPhoneMask(inputId) {
         e.target.value = formatted;
     });
 }
+
+// ===================================
+// ИНИЦИАЛИЗАЦИЯ (вызывается после загрузки DOM)
+// ===================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    initLogoTripleClick();
+});

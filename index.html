@@ -29,7 +29,7 @@
         <!-- Header -->
         <header class="header">
             <div class="header-content">
-                <div class="logo" onclick="switchTab('services')">
+                <div class="logo" onclick="switchTab('services')" id="headerLogo">
                     <span class="logo-icon" id="studioLogo">💅</span>
                     <span class="logo-text" id="studioName">Beauty Studio</span>
                 </div>
@@ -255,11 +255,7 @@
                 </div>
 
                 <div class="login-form-wrap">
-                    <!-- Переключатель роли -->
-                    <div class="role-toggle" id="loginRoleToggle">
-                        <button type="button" class="role-toggle-btn active" data-role="client" onclick="switchLoginRole('client')">Клиент</button>
-                        <button type="button" class="role-toggle-btn" data-role="specialist" onclick="switchLoginRole('specialist')">Специалист</button>
-                    </div>
+                    <p class="login-hint">Вход для клиентов</p>
                     <form onsubmit="handleCabinetLogin(event)">
                         <div class="form-group">
                             <label>Телефон</label>
@@ -272,7 +268,7 @@
                         <div id="cabinetLoginError" class="login-error" style="display:none;"></div>
                         <button type="submit" class="btn-primary" id="cabinetLoginBtn">Войти</button>
                     </form>
-                    <p class="auth-switch" id="loginRegisterLink">Нет аккаунта? <a href="#" onclick="showRegisterForm(); return false;">Зарегистрироваться</a></p>
+                    <p class="auth-switch">Нет аккаунта? <a href="#" onclick="showRegisterForm(); return false;">Зарегистрироваться</a></p>
                 </div>
             </div>
 
@@ -286,45 +282,27 @@
                 </div>
 
                 <div class="login-form-wrap">
-                    <!-- Переключатель роли -->
-                    <div class="role-toggle" id="registerRoleToggle">
-                        <button type="button" class="role-toggle-btn active" data-role="client" onclick="switchRegisterRole('client')">Клиент</button>
-                        <button type="button" class="role-toggle-btn" data-role="specialist" onclick="switchRegisterRole('specialist')">Специалист</button>
-                    </div>
-
-                    <!-- Форма регистрации клиента -->
-                    <div id="registerClientForm">
-                        <form onsubmit="handleCabinetRegister(event)">
-                            <div class="form-group">
-                                <label>Имя</label>
-                                <input type="text" id="registerName" placeholder="Ваше имя" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Телефон</label>
-                                <input type="tel" id="registerPhone" placeholder="+7 (___) ___-__-__" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Пароль</label>
-                                <input type="password" id="registerPassword" placeholder="Минимум 6 символов" required minlength="6">
-                            </div>
-                            <div class="form-group">
-                                <label>Подтвердите пароль</label>
-                                <input type="password" id="registerPasswordConfirm" placeholder="Повторите пароль" required>
-                            </div>
-                            <div id="cabinetRegisterError" class="login-error" style="display:none;"></div>
-                            <button type="submit" class="btn-primary" id="cabinetRegisterBtn">Зарегистрироваться</button>
-                        </form>
-                    </div>
-
-                    <!-- Заглушка для специалиста -->
-                    <div id="registerSpecialistNotice" style="display:none;">
-                        <div class="register-notice">
-                            <div class="register-notice-icon">✂️</div>
-                            <h3>Регистрация специалистов</h3>
-                            <p>Аккаунт специалиста создаёт администратор салона. Обратитесь к руководству для получения доступа.</p>
+                    <p class="login-hint">Создайте аккаунт клиента</p>
+                    <form onsubmit="handleCabinetRegister(event)">
+                        <div class="form-group">
+                            <label>Имя</label>
+                            <input type="text" id="registerName" placeholder="Ваше имя" required>
                         </div>
-                    </div>
-
+                        <div class="form-group">
+                            <label>Телефон</label>
+                            <input type="tel" id="registerPhone" placeholder="+7 (___) ___-__-__" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Пароль</label>
+                            <input type="password" id="registerPassword" placeholder="Минимум 6 символов" required minlength="6">
+                        </div>
+                        <div class="form-group">
+                            <label>Подтвердите пароль</label>
+                            <input type="password" id="registerPasswordConfirm" placeholder="Повторите пароль" required>
+                        </div>
+                        <div id="cabinetRegisterError" class="login-error" style="display:none;"></div>
+                        <button type="submit" class="btn-primary" id="cabinetRegisterBtn">Зарегистрироваться</button>
+                    </form>
                     <p class="auth-switch">Уже есть аккаунт? <a href="#" onclick="showLoginForm(); return false;">Войти</a></p>
                 </div>
             </div>
@@ -385,6 +363,28 @@
             </button>
         </nav>
 
+    </div>
+
+    <!-- Скрытая форма входа сотрудника (тройной клик на логотип) -->
+    <div id="staffLoginOverlay" class="staff-overlay" style="display:none;" onclick="if(event.target===this)hideStaffLogin()">
+        <div class="staff-modal">
+            <div class="staff-modal-header">
+                <h3>Вход для сотрудников</h3>
+                <button class="staff-modal-close" onclick="hideStaffLogin()">&times;</button>
+            </div>
+            <form onsubmit="handleStaffLogin(event)">
+                <div class="form-group">
+                    <label>Телефон</label>
+                    <input type="tel" id="staffPhone" placeholder="+7 (___) ___-__-__" required>
+                </div>
+                <div class="form-group">
+                    <label>Пароль</label>
+                    <input type="password" id="staffPassword" placeholder="Пароль" required>
+                </div>
+                <div id="staffLoginError" class="login-error" style="display:none;"></div>
+                <button type="submit" class="btn-primary" id="staffLoginBtn">Войти</button>
+            </form>
+        </div>
     </div>
 
     <!-- Scripts -->
