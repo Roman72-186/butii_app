@@ -28,3 +28,12 @@ Thumbs.db
 
 # Vercel
 .vercel
+
+# MCP config (содержит API ключи)
+.mcp.json
+
+# Claude Code
+.claude/
+
+# Субмодули
+n8n-skills/

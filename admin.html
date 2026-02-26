@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beauty Studio — Админ-панель</title>
+    <link rel="stylesheet" href="css/admin.css">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💅</text></svg>">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+    <!-- ========== ЭКРАН ВХОДА ========== -->
+    <div id="loginScreen" class="login-screen">
+        <div class="login-card">
+            <div class="login-logo">💅</div>
+            <h1>Beauty Studio</h1>
+            <p class="login-subtitle">Панель управления</p>
+
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label for="loginPhone">Телефон</label>
+                    <input type="tel" id="loginPhone" placeholder="+7 (___) ___-__-__" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Пароль</label>
+                    <input type="password" id="loginPassword" placeholder="Введите пароль" required>
+                </div>
+                <div id="loginError" class="error-message" style="display:none;"></div>
+                <button type="submit" class="btn-primary" id="loginBtn">Войти</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ========== ПАНЕЛЬ УПРАВЛЕНИЯ ========== -->
+    <div id="dashboard" class="dashboard" style="display:none;">
+
+        <!-- Сайдбар -->
+        <aside id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <span class="sidebar-logo">💅</span>
+                <span class="sidebar-title">Beauty Studio</span>
+            </div>
+
+            <div class="sidebar-user">
+                <div class="sidebar-user-name" id="userName"></div>
+                <div class="sidebar-user-role" id="userRole"></div>
+            </div>
+
+            <nav id="sidebarNav" class="sidebar-nav"></nav>
+
+            <button class="sidebar-logout" onclick="handleLogout()">Выйти</button>
+        </aside>
+
+        <!-- Основной контент -->
+        <main id="mainContent" class="main-content">
+
+            <!-- ===== ЗАПИСИ (общий вид) ===== -->
+            <section id="viewBookings" class="view" style="display:none;">
+                <div class="view-header">
+                    <h2>Записи</h2>
+                    <div class="view-header-actions">
+                        <input type="date" id="bookingsDateFilter" onchange="loadBookings()">
+                        <select id="bookingsStatusFilter" onchange="loadBookings()">
+                            <option value="">Все статусы</option>
+                            <option value="confirmed">Подтверждённые</option>
+                            <option value="pending">Ожидающие</option>
+                            <option value="cancelled">Отменённые</option>
+                            <option value="completed">Завершённые</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="bookingsTable" class="data-table-wrap"></div>
+            </section>
+
+            <!-- ===== МОЁ РАСПИСАНИЕ (специалист) ===== -->
+            <section id="viewSchedule" class="view" style="display:none;">
+                <div class="view-header">
+                    <h2>Моё расписание</h2>
+                </div>
+                <div class="schedule-grid" id="scheduleGrid"></div>
+
+                <div class="view-header" style="margin-top:2rem;">
+                    <h2>Заблокировать время</h2>
+                </div>
+                <div class="block-slot-form">
+                    <input type="date" id="blockDate" min="">
+                    <input type="time" id="blockTime" step="1800" value="09:00">
+                    <input type="text" id="blockReason" placeholder="Причина (необязательно)">
+                    <button class="btn-primary btn-sm" onclick="handleBlockSlot()">Заблокировать</button>
+                </div>
+                <div id="blockedSlotsList" class="blocked-list"></div>
+            </section>
+
+            <!-- ===== СПЕЦИАЛИСТЫ (админ) ===== -->
+            <section id="viewSpecialists" class="view" style="display:none;">
+                <div class="view-header">
+                    <h2>Специалисты</h2>
+                    <button class="btn-primary btn-sm" onclick="showAddSpecialistModal()">+ Добавить</button>
+                </div>
+                <div id="specialistsTable" class="data-table-wrap"></div>
+            </section>
+
+            <!-- ===== КЛИЕНТЫ (админ) ===== -->
+            <section id="viewClients" class="view" style="display:none;">
+                <div class="view-header">
+                    <h2>Клиенты</h2>
+                </div>
+                <div id="clientsTable" class="data-table-wrap"></div>
+            </section>
+
+            <!-- ===== УСЛУГИ (админ) ===== -->
+            <section id="viewServices" class="view" style="display:none;">
+                <div class="view-header">
+                    <h2>Услуги</h2>
+                    <button class="btn-primary btn-sm" onclick="showAddServiceModal()">+ Добавить</button>
+                </div>
+                <div id="servicesTable" class="data-table-wrap"></div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- ========== МОДАЛЬНОЕ ОКНО ========== -->
+    <div id="modal" class="modal-overlay" style="display:none;" onclick="closeModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 id="modalTitle"></h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div id="modalBody" class="modal-body"></div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/supabase-config.js"></script>
+    <script src="js/admin.js"></script>
+</body>
+</html>
