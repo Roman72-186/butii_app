@@ -6,6 +6,7 @@
 let currentCategory = 'all';
 let selectedDate = null;
 let selectedTime = null;
+let currentTab = 'services';
 
 // ===================================
 // ИНИЦИАЛИЗАЦИЯ
@@ -50,13 +51,62 @@ function setupHeader() {
 }
 
 // ===================================
-// НАВИГАЦИЯ
+// НАВИГАЦИЯ ТАБОВ
+// ===================================
+
+function switchTab(tabName) {
+    currentTab = tabName;
+
+    // Скрыть все табы
+    document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+    });
+
+    // Показать нужный таб
+    const tabEl = document.getElementById('tab' + tabName.charAt(0).toUpperCase() + tabName.slice(1));
+    if (tabEl) {
+        tabEl.classList.add('active');
+    }
+
+    // Обновить кнопки навигации
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.tab === tabName) {
+            btn.classList.add('active');
+        }
+    });
+
+    // Действия при переходе на таб
+    if (tabName === 'services') {
+        // Показать секцию услуг, скрыть остальные секции booking flow
+        const servicesTab = document.getElementById('tabServices');
+        if (servicesTab) {
+            servicesTab.querySelectorAll('section').forEach(s => s.style.display = 'none');
+            const servicesSection = document.getElementById('servicesSection');
+            if (servicesSection) servicesSection.style.display = 'block';
+        }
+    } else if (tabName === 'bookings') {
+        renderMyBookings();
+    }
+
+    window.scrollTo(0, 0);
+
+    // Haptic feedback
+    if (typeof telegramApp !== 'undefined') {
+        telegramApp.hapticFeedback('light');
+    }
+}
+
+// ===================================
+// НАВИГАЦИЯ СЕКЦИЙ
 // ===================================
 
 function showSection(sectionId) {
-    // Скрыть все секции
-    const sections = document.querySelectorAll('section');
-    sections.forEach(s => s.style.display = 'none');
+    // Скрыть все секции внутри текущего таба
+    const activeTab = document.querySelector('.tab-content.active');
+    if (activeTab) {
+        activeTab.querySelectorAll('section').forEach(s => s.style.display = 'none');
+    }
 
     // Показать нужную
     const section = document.getElementById(sectionId);
@@ -150,8 +200,7 @@ function showSuccess(booking) {
 }
 
 function showMyBookings() {
-    renderMyBookings();
-    showSection('myBookingsSection');
+    switchTab('bookings');
 }
 
 function resetApp() {
@@ -161,7 +210,7 @@ function resetApp() {
     currentCategory = 'all';
     renderCategories();
     renderServices();
-    showServices();
+    switchTab('services');
 }
 
 // ===================================
@@ -757,7 +806,7 @@ function rebookService(serviceId) {
 // ===================================
 
 function updateBookingsBadge() {
-    const badge = document.getElementById('bookingsBadge');
+    const badge = document.getElementById('tabBookingsBadge');
     const count = bookingManager.getUpcomingCount();
 
     if (badge) {

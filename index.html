@@ -3,10 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Beauty Studio - Запись на услуги</title>
+    <title>Beauty Studio</title>
 
     <!-- Telegram Web App Script -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <!-- Styles -->
     <link rel="stylesheet" href="css/style.css">
@@ -26,195 +29,312 @@
         <!-- Header -->
         <header class="header">
             <div class="header-content">
-                <div class="logo" onclick="showServices()">
+                <div class="logo" onclick="switchTab('services')">
                     <span class="logo-icon" id="studioLogo">💅</span>
                     <span class="logo-text" id="studioName">Beauty Studio</span>
-                </div>
-                <div class="header-actions">
-                    <button class="header-btn" id="myBookingsBtn" onclick="showMyBookings()">
-                        <span class="header-btn-icon">📋</span>
-                        <span class="header-btn-badge" id="bookingsBadge" style="display: none;">0</span>
-                    </button>
                 </div>
             </div>
         </header>
 
-        <!-- ===================================
-             СЕКЦИЯ 1: КАТАЛОГ УСЛУГ
-             =================================== -->
-        <section class="services-section" id="servicesSection">
-            <!-- Категории -->
-            <div class="categories-scroll">
-                <div class="categories" id="categories"></div>
-            </div>
+        <!-- ==========================================
+             ТАБ 1: УСЛУГИ (booking flow)
+             ========================================== -->
+        <div id="tabServices" class="tab-content active">
 
-            <!-- Сетка услуг -->
-            <div class="services-grid" id="servicesGrid"></div>
-        </section>
-
-        <!-- ===================================
-             СЕКЦИЯ 2: ВЫБОР МАСТЕРА
-             =================================== -->
-        <section class="masters-section" id="mastersSection" style="display: none;">
-            <div class="section-header">
-                <button class="back-btn" onclick="showServices()">
-                    <span class="back-icon">←</span> Назад
-                </button>
-                <h2>Выберите мастера</h2>
-            </div>
-
-            <!-- Выбранная услуга -->
-            <div class="selected-service-card" id="selectedServiceCard"></div>
-
-            <!-- Список мастеров -->
-            <div class="masters-list" id="mastersList"></div>
-        </section>
-
-        <!-- ===================================
-             СЕКЦИЯ 3: ВЫБОР ДАТЫ И ВРЕМЕНИ
-             =================================== -->
-        <section class="booking-section" id="bookingSection" style="display: none;">
-            <div class="section-header">
-                <button class="back-btn" onclick="goBackFromBooking()">
-                    <span class="back-icon">←</span> Назад
-                </button>
-                <h2>Выберите дату и время</h2>
-            </div>
-
-            <!-- Информация о выборе -->
-            <div class="booking-info-card" id="bookingInfoCard"></div>
-
-            <!-- Календарь -->
-            <div class="calendar-section">
-                <h3 class="calendar-title">Выберите дату</h3>
-                <div class="calendar-scroll">
-                    <div class="calendar-days" id="calendarDays"></div>
+            <section class="services-section" id="servicesSection">
+                <div class="categories-scroll">
+                    <div class="categories" id="categories"></div>
                 </div>
-            </div>
+                <div class="services-grid" id="servicesGrid"></div>
+            </section>
 
-            <!-- Выбор времени -->
-            <div class="time-section" id="timeSection" style="display: none;">
-                <h3 class="time-title">Выберите время</h3>
-                <div class="time-slots" id="timeSlots"></div>
-            </div>
+            <section class="masters-section" id="mastersSection" style="display: none;">
+                <div class="section-header">
+                    <button class="back-btn" onclick="showServices()">
+                        <span class="back-icon">←</span> Назад
+                    </button>
+                    <h2>Выберите мастера</h2>
+                </div>
+                <div class="selected-service-card" id="selectedServiceCard"></div>
+                <div class="masters-list" id="mastersList"></div>
+            </section>
 
-            <!-- Кнопка подтверждения -->
-            <div class="booking-actions" id="bookingActions" style="display: none;">
-                <button class="btn-primary" onclick="showConfirmation()">
-                    <span>Продолжить</span>
-                    <span class="btn-arrow">→</span>
-                </button>
-            </div>
-        </section>
-
-        <!-- ===================================
-             СЕКЦИЯ 4: ПОДТВЕРЖДЕНИЕ ЗАПИСИ
-             =================================== -->
-        <section class="confirmation-section" id="confirmationSection" style="display: none;">
-            <div class="section-header">
-                <button class="back-btn" onclick="showBooking()">
-                    <span class="back-icon">←</span> Назад
-                </button>
-                <h2>Подтверждение записи</h2>
-            </div>
-
-            <!-- Детали записи -->
-            <div class="confirmation-card">
-                <div class="confirmation-details" id="confirmationDetails"></div>
-            </div>
-
-            <!-- Контактные данные -->
-            <form id="bookingForm" onsubmit="submitBooking(event)">
-                <div class="form-section">
-                    <h3>Контактные данные</h3>
-
-                    <div class="form-group">
-                        <label for="customerName">Имя *</label>
-                        <input type="text" id="customerName" required placeholder="Введите ваше имя">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="customerPhone">Телефон *</label>
-                        <input type="tel" id="customerPhone" required placeholder="+7 (___) ___-__-__">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="customerComment">Комментарий (необязательно)</label>
-                        <textarea id="customerComment" rows="3" placeholder="Ваши пожелания"></textarea>
+            <section class="booking-section" id="bookingSection" style="display: none;">
+                <div class="section-header">
+                    <button class="back-btn" onclick="goBackFromBooking()">
+                        <span class="back-icon">←</span> Назад
+                    </button>
+                    <h2>Выберите дату и время</h2>
+                </div>
+                <div class="booking-info-card" id="bookingInfoCard"></div>
+                <div class="calendar-section">
+                    <h3 class="calendar-title">Выберите дату</h3>
+                    <div class="calendar-scroll">
+                        <div class="calendar-days" id="calendarDays"></div>
                     </div>
                 </div>
+                <div class="time-section" id="timeSection" style="display: none;">
+                    <h3 class="time-title">Выберите время</h3>
+                    <div class="time-slots" id="timeSlots"></div>
+                </div>
+                <div class="booking-actions" id="bookingActions" style="display: none;">
+                    <button class="btn-primary" onclick="showConfirmation()">
+                        <span>Продолжить</span>
+                        <span class="btn-arrow">→</span>
+                    </button>
+                </div>
+            </section>
 
-                <button type="submit" class="btn-primary" id="submitBookingBtn">
-                    <span>Записаться</span>
-                    <span id="bookingPrice">0 ₽</span>
-                </button>
-            </form>
-        </section>
+            <section class="confirmation-section" id="confirmationSection" style="display: none;">
+                <div class="section-header">
+                    <button class="back-btn" onclick="showBooking()">
+                        <span class="back-icon">←</span> Назад
+                    </button>
+                    <h2>Подтверждение записи</h2>
+                </div>
+                <div class="confirmation-card">
+                    <div class="confirmation-details" id="confirmationDetails"></div>
+                </div>
+                <form id="bookingForm" onsubmit="submitBooking(event)">
+                    <div class="form-section">
+                        <h3>Контактные данные</h3>
+                        <div class="form-group">
+                            <label for="customerName">Имя *</label>
+                            <input type="text" id="customerName" required placeholder="Введите ваше имя">
+                        </div>
+                        <div class="form-group">
+                            <label for="customerPhone">Телефон *</label>
+                            <input type="tel" id="customerPhone" required placeholder="+7 (___) ___-__-__">
+                        </div>
+                        <div class="form-group">
+                            <label for="customerComment">Комментарий (необязательно)</label>
+                            <textarea id="customerComment" rows="3" placeholder="Ваши пожелания"></textarea>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary" id="submitBookingBtn">
+                        <span>Записаться</span>
+                        <span id="bookingPrice">0 ₽</span>
+                    </button>
+                </form>
+            </section>
 
-        <!-- ===================================
-             СЕКЦИЯ 5: УСПЕШНАЯ ЗАПИСЬ
-             =================================== -->
-        <section class="success-section" id="successSection" style="display: none;">
-            <div class="success-animation">
-                <div class="success-icon">✓</div>
-            </div>
-            <h2>Вы записаны!</h2>
-            <p class="success-message">
-                Ждём вас в указанное время. Напоминание придёт за день до визита.
-            </p>
-            <div class="success-details" id="successDetails"></div>
-            <div class="success-actions">
-                <button class="btn-primary" onclick="showMyBookings()">
-                    <span>Мои записи</span>
-                    <span class="btn-arrow">→</span>
-                </button>
-                <button class="btn-secondary" onclick="resetApp()">
-                    Записаться ещё
-                </button>
-            </div>
-        </section>
+            <section class="success-section" id="successSection" style="display: none;">
+                <div class="success-animation">
+                    <div class="success-icon">✓</div>
+                </div>
+                <h2>Вы записаны!</h2>
+                <p class="success-message">Ждём вас в указанное время.</p>
+                <div class="success-details" id="successDetails"></div>
+                <div class="success-actions">
+                    <button class="btn-primary" onclick="switchTab('bookings')">
+                        <span>Мои записи</span>
+                        <span class="btn-arrow">→</span>
+                    </button>
+                    <button class="btn-secondary" onclick="resetApp()">
+                        Записаться ещё
+                    </button>
+                </div>
+            </section>
 
-        <!-- ===================================
-             СЕКЦИЯ 6: МОИ ЗАПИСИ
-             =================================== -->
-        <section class="my-bookings-section" id="myBookingsSection" style="display: none;">
-            <div class="section-header">
-                <button class="back-btn" onclick="showServices()">
-                    <span class="back-icon">←</span> Назад
-                </button>
-                <h2>Мои записи</h2>
-            </div>
+        </div>
 
-            <!-- Пустое состояние -->
-            <div id="noBookings" class="empty-state">
-                <div class="empty-icon">📅</div>
-                <h3>Записей пока нет</h3>
-                <p>Запишитесь на услугу, и она появится здесь</p>
-                <button class="btn-secondary" onclick="showServices()">Выбрать услугу</button>
-            </div>
+        <!-- ==========================================
+             ТАБ 2: МОИ ЗАПИСИ
+             ========================================== -->
+        <div id="tabBookings" class="tab-content">
+            <section class="my-bookings-section" id="myBookingsSection">
+                <h2 class="tab-title">Мои записи</h2>
 
-            <!-- Список записей -->
-            <div id="bookingsList" class="bookings-list" style="display: none;">
-                <!-- Предстоящие -->
-                <div class="bookings-group" id="upcomingBookings">
-                    <h3 class="bookings-group-title">Предстоящие</h3>
-                    <div class="bookings-items" id="upcomingBookingsItems"></div>
+                <div id="noBookings" class="empty-state">
+                    <div class="empty-icon">📅</div>
+                    <h3>Записей пока нет</h3>
+                    <p>Запишитесь на услугу, и она появится здесь</p>
+                    <button class="btn-secondary" onclick="switchTab('services')">Выбрать услугу</button>
                 </div>
 
-                <!-- Прошедшие -->
-                <div class="bookings-group" id="pastBookings" style="display: none;">
-                    <h3 class="bookings-group-title">Прошедшие</h3>
-                    <div class="bookings-items" id="pastBookingsItems"></div>
+                <div id="bookingsList" class="bookings-list" style="display: none;">
+                    <div class="bookings-group" id="upcomingBookings">
+                        <h3 class="bookings-group-title">Предстоящие</h3>
+                        <div class="bookings-items" id="upcomingBookingsItems"></div>
+                    </div>
+                    <div class="bookings-group" id="pastBookings" style="display: none;">
+                        <h3 class="bookings-group-title">Прошедшие</h3>
+                        <div class="bookings-items" id="pastBookingsItems"></div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- ==========================================
+             ТАБ 3: БОНУСЫ / ЛОЯЛЬНОСТЬ
+             ========================================== -->
+        <div id="tabBonuses" class="tab-content">
+            <section class="bonuses-section">
+                <h2 class="tab-title">Мои бонусы</h2>
+
+                <!-- Карта лояльности -->
+                <div class="loyalty-card">
+                    <div class="loyalty-card-bg">
+                        <div class="loyalty-card-logo">💅 Beauty Studio</div>
+                        <div class="loyalty-card-name" id="loyaltyName">Гость</div>
+                        <div class="loyalty-card-balance">
+                            <span class="loyalty-balance-value" id="loyaltyBalance">0</span>
+                            <span class="loyalty-balance-label">бонусов</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Реферальная ссылка -->
+                <div class="cabinet-card">
+                    <div class="cabinet-card-header">
+                        <span class="cabinet-card-icon">👥</span>
+                        <span>Пригласи друга</span>
+                    </div>
+                    <p class="cabinet-card-desc">Поделитесь ссылкой и получите бонусы за каждого друга</p>
+                    <div class="ref-link-box">
+                        <span id="refLink" class="ref-link-text">Войдите в кабинет</span>
+                        <button class="btn-sm btn-copy" onclick="copyRefLink()">Копировать</button>
+                    </div>
+                </div>
+
+                <!-- Мои рефералы -->
+                <div class="cabinet-card" onclick="showCabinetView('myRefs')">
+                    <div class="cabinet-card-row">
+                        <div class="cabinet-card-left">
+                            <span class="cabinet-card-icon">🤝</span>
+                            <span>Мои рефералы</span>
+                        </div>
+                        <span class="cabinet-card-arrow">→</span>
+                    </div>
+                </div>
+
+                <!-- Архив рефералов -->
+                <div class="cabinet-card" onclick="showCabinetView('archiveRefs')">
+                    <div class="cabinet-card-row">
+                        <div class="cabinet-card-left">
+                            <span class="cabinet-card-icon">📁</span>
+                            <span>Архив рефералов</span>
+                        </div>
+                        <span class="cabinet-card-arrow">→</span>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- ==========================================
+             ТАБ 4: КАБИНЕТ
+             ========================================== -->
+        <div id="tabCabinet" class="tab-content">
+
+            <!-- Гостевой вид (до входа) -->
+            <div id="cabinetGuest">
+                <h2 class="tab-title">Кабинет</h2>
+
+                <!-- О салоне -->
+                <div class="cabinet-card about-card">
+                    <div class="about-logo">💅</div>
+                    <h3>Beauty Studio</h3>
+                    <p id="aboutAddress">г. Москва, ул. Красоты, д. 1</p>
+                    <p id="aboutPhone">+7 (999) 123-45-67</p>
+                    <p class="about-hours">Пн–Сб: 9:00 – 20:00</p>
+                </div>
+
+                <!-- Кнопка входа -->
+                <button class="btn-primary cabinet-login-btn" onclick="showLoginForm()">
+                    <span>👤</span> Войти в кабинет
+                </button>
+            </div>
+
+            <!-- Форма входа -->
+            <div id="cabinetLogin" style="display:none;">
+                <div class="section-header">
+                    <button class="back-btn" onclick="hideLoginForm()">
+                        <span class="back-icon">←</span> Назад
+                    </button>
+                    <h2>Вход</h2>
+                </div>
+
+                <div class="login-form-wrap">
+                    <p class="login-hint">Для сотрудников и клиентов</p>
+                    <form onsubmit="handleCabinetLogin(event)">
+                        <div class="form-group">
+                            <label>Телефон</label>
+                            <input type="tel" id="cabinetPhone" placeholder="+7 (___) ___-__-__" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Пароль</label>
+                            <input type="password" id="cabinetPassword" placeholder="Введите пароль" required>
+                        </div>
+                        <div id="cabinetLoginError" class="login-error" style="display:none;"></div>
+                        <button type="submit" class="btn-primary" id="cabinetLoginBtn">Войти</button>
+                    </form>
                 </div>
             </div>
-        </section>
+
+            <!-- Профиль (после входа) -->
+            <div id="cabinetProfile" style="display:none;">
+                <h2 class="tab-title">Кабинет</h2>
+
+                <!-- Карточка профиля -->
+                <div class="profile-card">
+                    <div class="profile-avatar" id="profileAvatar">👤</div>
+                    <div class="profile-info">
+                        <div class="profile-name" id="profileName"></div>
+                        <div class="profile-role" id="profileRole"></div>
+                    </div>
+                </div>
+
+                <!-- Меню профиля -->
+                <div id="profileMenu" class="profile-menu"></div>
+
+                <!-- Контент подвидов (расписание, рефералы и т.д.) -->
+                <div id="cabinetSubview" style="display:none;">
+                    <div class="section-header">
+                        <button class="back-btn" onclick="closeCabinetSubview()">
+                            <span class="back-icon">←</span> Назад
+                        </button>
+                        <h2 id="cabinetSubviewTitle"></h2>
+                    </div>
+                    <div id="cabinetSubviewContent"></div>
+                </div>
+
+                <!-- Кнопка выхода -->
+                <button class="btn-logout" onclick="handleCabinetLogout()">Выйти из кабинета</button>
+            </div>
+
+        </div>
+
+        <!-- ==========================================
+             НИЖНЯЯ НАВИГАЦИЯ
+             ========================================== -->
+        <nav id="bottomNav" class="bottom-nav">
+            <button class="tab-btn active" data-tab="services" onclick="switchTab('services')">
+                <span class="tab-btn-icon">✨</span>
+                <span class="tab-btn-label">Услуги</span>
+            </button>
+            <button class="tab-btn" data-tab="bookings" onclick="switchTab('bookings')">
+                <span class="tab-btn-icon">📋</span>
+                <span class="tab-btn-label">Записи</span>
+                <span class="tab-btn-badge" id="tabBookingsBadge" style="display:none;">0</span>
+            </button>
+            <button class="tab-btn" data-tab="bonuses" onclick="switchTab('bonuses')">
+                <span class="tab-btn-icon">🎁</span>
+                <span class="tab-btn-label">Бонусы</span>
+            </button>
+            <button class="tab-btn" data-tab="cabinet" onclick="switchTab('cabinet')">
+                <span class="tab-btn-icon">👤</span>
+                <span class="tab-btn-label">Кабинет</span>
+            </button>
+        </nav>
 
     </div>
 
     <!-- Scripts -->
+    <script src="js/supabase-config.js"></script>
     <script src="js/config.js"></script>
     <script src="js/telegram.js"></script>
     <script src="js/booking.js"></script>
     <script src="js/app.js"></script>
+    <script src="js/cabinet.js"></script>
 </body>
 </html>

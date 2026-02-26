@@ -692,7 +692,7 @@ body {
 
 .booking-actions {
     position: fixed;
-    bottom: 0;
+    bottom: 64px;
     left: 0;
     right: 0;
     padding: 16px;
@@ -1138,6 +1138,570 @@ body {
 .services-grid .service-card:nth-child(4) { animation-delay: 0.2s; }
 .services-grid .service-card:nth-child(5) { animation-delay: 0.25s; }
 .services-grid .service-card:nth-child(6) { animation-delay: 0.3s; }
+
+/* ===================================
+   BOTTOM NAVIGATION
+   =================================== */
+
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--bg-white);
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-around;
+    padding: 4px 0;
+    padding-bottom: max(4px, env(safe-area-inset-bottom));
+    z-index: 200;
+    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.tab-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 6px 12px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: var(--transition);
+    position: relative;
+    min-width: 60px;
+}
+
+.tab-btn-icon {
+    font-size: 22px;
+    line-height: 1;
+    opacity: 0.5;
+    transition: var(--transition);
+}
+
+.tab-btn-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-light);
+    transition: var(--transition);
+}
+
+.tab-btn.active .tab-btn-icon {
+    opacity: 1;
+}
+
+.tab-btn.active .tab-btn-label {
+    color: var(--primary-color);
+    font-weight: 700;
+}
+
+.tab-btn:active {
+    transform: scale(0.9);
+}
+
+.tab-btn-badge {
+    position: absolute;
+    top: 2px;
+    right: 6px;
+    background: var(--primary-color);
+    color: white;
+    font-size: 9px;
+    font-weight: 700;
+    min-width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    padding: 0 4px;
+}
+
+/* ===================================
+   TAB CONTENT
+   =================================== */
+
+.tab-content {
+    display: none;
+    padding-bottom: 72px;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.tab-title {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--text-primary);
+    padding: 20px 16px 12px;
+}
+
+/* ===================================
+   CABINET - GUEST
+   =================================== */
+
+.about-card {
+    text-align: center;
+    padding: 24px 16px;
+}
+
+.about-logo {
+    font-size: 48px;
+    margin-bottom: 8px;
+}
+
+.about-card h3 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.about-card p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+}
+
+.about-hours {
+    color: var(--text-light) !important;
+    font-size: 13px !important;
+}
+
+.cabinet-login-btn {
+    margin: 16px;
+    width: calc(100% - 32px);
+    justify-content: center;
+    gap: 8px;
+}
+
+/* ===================================
+   CABINET - LOGIN
+   =================================== */
+
+.login-form-wrap {
+    padding: 24px 16px;
+}
+
+.login-hint {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin-bottom: 20px;
+}
+
+.login-error {
+    color: var(--error-color);
+    background: #ffebee;
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    margin-bottom: 12px;
+}
+
+.login-success {
+    color: var(--success-color);
+    background: #e8f5e9;
+    padding: 10px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    margin-bottom: 12px;
+}
+
+/* ===================================
+   CABINET - PROFILE
+   =================================== */
+
+.profile-card {
+    margin: 0 16px 16px;
+    padding: 20px;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    color: white;
+}
+
+.profile-avatar {
+    width: 56px;
+    height: 56px;
+    background: rgba(255,255,255,0.25);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.profile-info {
+    flex: 1;
+}
+
+.profile-name {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.profile-role {
+    font-size: 13px;
+    opacity: 0.85;
+}
+
+/* Profile Menu */
+.profile-menu {
+    padding: 0 16px;
+}
+
+.profile-menu-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    background: var(--bg-white);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.profile-menu-item:active {
+    background: var(--bg-light);
+    transform: scale(0.98);
+}
+
+.profile-menu-item-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.profile-menu-item-icon {
+    font-size: 20px;
+}
+
+.profile-menu-item-arrow {
+    color: var(--text-light);
+    font-size: 16px;
+}
+
+.btn-logout {
+    display: block;
+    width: calc(100% - 32px);
+    margin: 24px 16px;
+    padding: 14px;
+    background: none;
+    border: 2px solid var(--error-color);
+    border-radius: var(--radius-md);
+    color: var(--error-color);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    text-align: center;
+}
+
+.btn-logout:active {
+    background: #ffebee;
+}
+
+/* ===================================
+   LOYALTY CARD
+   =================================== */
+
+.loyalty-card {
+    margin: 0 16px 16px;
+}
+
+.loyalty-card-bg {
+    background: linear-gradient(135deg, var(--primary-color) 0%, #7b1fa2 100%);
+    border-radius: var(--radius-lg);
+    padding: 24px 20px;
+    color: white;
+    position: relative;
+    overflow: hidden;
+}
+
+.loyalty-card-bg::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -30%;
+    width: 200px;
+    height: 200px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 50%;
+}
+
+.loyalty-card-logo {
+    font-size: 14px;
+    opacity: 0.85;
+    margin-bottom: 16px;
+}
+
+.loyalty-card-name {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.loyalty-card-balance {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.loyalty-balance-value {
+    font-size: 36px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.loyalty-balance-label {
+    font-size: 14px;
+    opacity: 0.85;
+}
+
+/* ===================================
+   CABINET CARDS
+   =================================== */
+
+.cabinet-card {
+    margin: 0 16px 12px;
+    padding: 16px;
+    background: var(--bg-white);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.cabinet-card:active {
+    background: var(--bg-light);
+    transform: scale(0.98);
+}
+
+.cabinet-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+}
+
+.cabinet-card-icon {
+    font-size: 20px;
+}
+
+.cabinet-card-desc {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+    line-height: 1.4;
+}
+
+.cabinet-card-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.cabinet-card-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.cabinet-card-arrow {
+    color: var(--text-light);
+    font-size: 16px;
+}
+
+/* Referral Link */
+.ref-link-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-light);
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+}
+
+.ref-link-text {
+    flex: 1;
+    font-size: 12px;
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.btn-sm {
+    padding: 6px 12px;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-copy {
+    background: var(--primary-color);
+    color: white;
+}
+
+.btn-copy:active {
+    background: var(--primary-dark);
+}
+
+/* ===================================
+   SUBVIEW STYLES
+   =================================== */
+
+.subview-loading {
+    text-align: center;
+    padding: 40px 16px;
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.subview-error {
+    text-align: center;
+    padding: 40px 16px;
+    color: var(--error-color);
+    font-size: 14px;
+}
+
+.subview-empty {
+    text-align: center;
+    padding: 40px 16px;
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.subview-empty-state {
+    text-align: center;
+    padding: 40px 16px;
+}
+
+.subview-empty-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+    opacity: 0.5;
+}
+
+.subview-empty-state h3 {
+    font-size: 18px;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+}
+
+.subview-empty-state p {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.subview-card {
+    margin: 16px;
+    padding: 16px;
+    background: var(--bg-white);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+}
+
+.subview-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+}
+
+.subview-row:not(:last-child) {
+    border-bottom: 1px solid var(--border-color);
+}
+
+.subview-row-label {
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.subview-row-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.subview-list {
+    padding: 16px;
+}
+
+.subview-list-item {
+    padding: 14px 16px;
+    background: var(--bg-white);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    margin-bottom: 8px;
+}
+
+.subview-list-item-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.subview-list-item-meta {
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+/* Schedule */
+.schedule-list {
+    padding: 16px;
+}
+
+.schedule-day-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 16px;
+    background: var(--bg-white);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    margin-bottom: 8px;
+}
+
+.schedule-day-card.day-off {
+    opacity: 0.5;
+}
+
+.schedule-day-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.schedule-day-time {
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+/* Bonuses section */
+.bonuses-section {
+    max-width: 1200px;
+    margin: 0 auto;
+}
 
 /* ===================================
    RESPONSIVE
