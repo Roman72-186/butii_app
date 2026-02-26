@@ -121,6 +121,9 @@ function onLoginSuccess() {
     // Обновить карту лояльности на вкладке Бонусы
     updateLoyaltyCard();
 
+    // Показать вкладки Записи и Бонусы
+    updateAuthTabs(true);
+
     // Haptic feedback
     if (typeof telegramApp !== 'undefined') {
         telegramApp.hapticFeedback('success');
@@ -141,9 +144,23 @@ function handleCabinetLogout() {
     document.getElementById('loyaltyName').textContent = 'Гость';
     document.getElementById('loyaltyBalance').textContent = '0';
 
+    // Скрыть вкладки Записи и Бонусы, вернуться на Услуги
+    updateAuthTabs(false);
+    switchTab('services');
+
     if (typeof telegramApp !== 'undefined') {
         telegramApp.hapticFeedback('light');
     }
+}
+
+// ===================================
+// УПРАВЛЕНИЕ ТАБАМИ ПО АВТОРИЗАЦИИ
+// ===================================
+
+function updateAuthTabs(isLoggedIn) {
+    document.querySelectorAll('.tab-btn.auth-required').forEach(btn => {
+        btn.style.display = isLoggedIn ? '' : 'none';
+    });
 }
 
 // ===================================
