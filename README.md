@@ -1,305 +1,136 @@
-# 🔑 Keychain Shop - Telegram Mini App
+# Keychain Shop Telegram Mini App
 
-Современное Telegram Mini App приложение для продажи брелков с интеграцией LEADTEX CRM.
+## Описание
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
-![License](https://img.shields.io/badge/license-MIT-green.svg)
+Это Telegram Mini App для интернет-магазина брелков, интегрированный с платформой LeadTex. Проект включает в себя основное приложение магазина и bridge компонент для точной атрибуции рекламных кампаний.
 
-## 🎯 Особенности
+## Архитектура
 
-- ✅ Полностью адаптивный дизайн
-- 🛒 Функциональная корзина с localStorage
-- 📱 Интеграция с Telegram Web App API
-- 🔗 Автоматическая отправка заказов в LEADTEX CRM
-- 🎨 Современный UI/UX дизайн
-- ⚡ Быстрая загрузка и плавные анимации
-- 🔐 Безопасная обработка данных
+- **Frontend**: HTML/CSS/JS Telegram Mini App
+- **Bridge**: Мост для атрибуции рекламных параметров из Telegram Ads
+- **Backend**: Vercel Serverless Functions (для обхода CORS)
+- **CRM**: LeadTex для управления заказами
 
-## 🚀 Быстрый старт
+## Запуск бота через Telegram
 
-### 1. Клонирование репозитория
+Для запуска бота с использованием домена LeadTex, следуйте этим шагам:
 
-```bash
-git clone https://github.com/your-username/keychain-shop.git
-cd keychain-shop
+### 1. Создание бота в Telegram
+
+1. Начните диалог с [@BotFather](https://t.me/BotFather) в Telegram
+2. Используйте команду `/newbot`, чтобы создать нового бота
+3. Следуйте инструкциям, чтобы задать имя и username для вашего бота
+4. После завершения вы получите токен API
+
+### 2. Настройка бота в LeadTex
+
+1. Войдите в ваш аккаунт LeadTex
+2. Перейдите в раздел "Настройки" → "Мессенджеры (каналы)"
+3. Выберите Telegram и нажмите "Подключить"
+4. Вставьте токен API, который вы получили от @BotFather
+
+### 3. Настройка Bridge для рекламной атрибуции
+
+Bridge компонент позволяет точно отслеживать источники переходов из рекламных кампаний:
+
+1. **Разверните bridge** на Vercel или другом хостинге
+2. **Настройте переменные окружения** в `.env` файле:
+   ```
+   LEADTEH_WEBHOOK_URL=https://your-leadteh-account.leadteh.ru/inner_webhook/your-webhook-uuid
+   LEADTEH_API_KEY=your_api_key
+   LEADTEH_BOT_ID=your_bot_id
+   ```
+3. **Обновите BOT_USERNAME** в `bridge/index.html` на ваш реальный username бота
+4. **Настройте Mini App** в BotFather с коротким именем `bridge`
+
+### 4. Создание ссылки для запуска
+
+Для рекламных кампаний используйте формат:
+```
+https://t.me/your_bot_username/bridge?startapp=campaign_tag
 ```
 
-### 2. Установка зависимостей
-
-```bash
-npm install
+Для обычного запуска приложения:
+```
+https://t.me/your_bot_username?startapp=miniapp_id
 ```
 
-### 3. Локальная разработка
+Где:
+- `your_bot_username` — это username вашего Telegram-бота (например, `@mykeychainbot`)
+- `campaign_tag` — тег рекламной кампании (например, `promo_jan2024`)
+- `miniapp_id` — идентификатор вашего Mini App в системе LeadTex
 
-```bash
-npm run dev
-```
+### 5. Настройка домена в LeadTex
 
-Откроется браузер по адресу `http://localhost:3000`
+LeadTex автоматически обеспечивает соответствие доменным требованиям Telegram для запуска Mini Apps. Вам не нужно настраивать отдельный webhook, так как вся обработка происходит через платформу LeadTex.
 
-### 4. Настройка LEADTEX вебхука
+## Интеграция с LeadTex
 
-Откройте `js/config.js` и замените URL вебхука на свой:
+При оформлении заказа в Mini App:
 
-```javascript
-const CONFIG = {
-    WEBHOOK_URL: 'https://rb786743.leadteh.ru/inner_webhook/1f829cc9-3da3-4485-a97d-350e0d34baa1',
-    // ...
-};
-```
+1. Приложение получает `telegram_id` пользователя из Telegram Web App API
+2. Отправляется POST-запрос на webhook LeadTex с данными заказа
+3. LeadTex создает карточку контакта с `telegram_id` и запускает сценарий обработки
 
-## 📦 Деплой на Vercel
-
-### Способ 1: Через GitHub
-
-1. Создайте репозиторий на GitHub
-2. Загрузите файлы проекта
-3. Перейдите на [vercel.com](https://vercel.com)
-4. Нажмите "New Project"
-5. Выберите репозиторий
-6. Нажмите "Deploy"
-
-### Способ 2: Через Vercel CLI
-
-```bash
-# Установите Vercel CLI
-npm i -g vercel
-
-# Войдите в аккаунт
-vercel login
-
-# Деплой
-vercel --prod
-```
-
-## 🔧 Настройка в LEADTEX
-
-### 1. Создание вебхука
-
-1. Войдите в LEADTEX
-2. Перейдите: **Интеграции → Входящие вебхуки**
-3. Нажмите **"Создать вебхук"**
-4. Выберите тип: **"Стандартный вебхук"**
-5. Укажите имя: "Keychain Shop Orders"
-6. Выберите сценарий для обработки заказов
-7. Скопируйте URL вебхука
-
-### 2. Настройка переменных
-
-Добавьте следующие переменные в настройках вебхука:
-
-| Переменная из запроса | Переменная в боте |
-|----------------------|-------------------|
-| `order_id` | `order_id` |
-| `order_total` | `order_total` |
-| `customer_name` | `customer_name` |
-| `customer_phone` | `customer_phone` |
-| `customer_email` | `customer_email` |
-| `delivery_city` | `delivery_city` |
-| `delivery_address` | `delivery_address` |
-| `order_items` | `order_items` |
-| `order_comment` | `order_comment` |
-
-### 3. Пример сценария в LEADTEX
-
-Создайте сценарий со следующими блоками:
-
-**Блок 1: Простое сообщение**
-```
-🎉 Новый заказ #{{order_id}}!
-
-👤 Клиент: {{customer_name}}
-📱 Телефон: {{customer_phone}}
-📧 Email: {{customer_email}}
-
-📦 Товары:
-{{order_items}}
-
-💰 Сумма: {{order_total}} ₽
-
-🚚 Доставка:
-{{delivery_city}}, {{delivery_address}}
-
-💬 Комментарий: {{order_comment}}
-```
-
-**Блок 2: Заявка**
-- Создание заявки в CRM
-- Отправка уведомления менеджеру
-
-**Блок 3: Назначить тег**
-- Добавьте тег "new_order"
-
-## 🤖 Настройка в Telegram
-
-### 1. Создание бота
-
-1. Найдите [@BotFather](https://t.me/botfather) в Telegram
-2. Отправьте: `/newbot`
-3. Укажите имя и username бота
-
-### 2. Создание Mini App
-
-1. Отправьте: `/newapp`
-2. Выберите вашего бота
-3. Введите название: "Keychain Shop"
-4. Введите описание: "Магазин стильных брелков"
-5. Загрузите картинку 640x360px
-6. Вставьте URL Vercel: `https://your-app.vercel.app`
-7. Готово! Получите ссылку на Mini App
-
-### 3. Добавление в меню бота
-
-```
-/setmenubutton
-Выберите бота
-Введите текст кнопки: "🛍️ Открыть магазин"
-Вставьте URL Mini App
-```
-
-## 📱 Структура проекта
-
-```
-keychain-shop/
-├── index.html          # Главная страница
-├── css/
-│   └── style.css       # Стили приложения
-├── js/
-│   ├── config.js       # Конфигурация
-│   ├── telegram.js     # Интеграция с Telegram API
-│   ├── cart.js         # Управление корзиной
-│   └── app.js          # Основная логика
-├── package.json        # Зависимости
-├── vercel.json         # Конфигурация Vercel
-├── .gitignore          # Игнорируемые файлы
-└── README.md           # Документация
-```
-
-## 🎨 Кастомизация
-
-### Изменение товара
-
-Откройте `js/config.js`:
-
-```javascript
-PRODUCT: {
-    id: 'your-product-id',
-    name: 'Название товара',
-    price: 1990,
-    oldPrice: 2990,
-    image: 'URL_картинки',
-    description: 'Описание товара',
-    sku: 'SKU-CODE'
-}
-```
-
-### Изменение цветов
-
-Откройте `css/style.css` и измените CSS переменные:
-
-```css
-:root {
-    --primary-color: #0088cc;
-    --secondary-color: #ff6b6b;
-    --success-color: #51cf66;
-    /* ... */
-}
-```
-
-### Изменение логотипа
-
-В `index.html` найдите блок `.logo` и замените emoji:
-
-```html
-<span class="logo-icon">🔑</span>
-<span class="logo-text">YourShop</span>
-```
-
-## 🧪 Тестирование
-
-### Локальное тестирование
-
-1. Включите режим разработки в `js/config.js`:
-```javascript
-DEV_MODE: true
-```
-
-2. Запустите локальный сервер:
-```bash
-npm run dev
-```
-
-### Тестирование с ngrok
-
-```bash
-# Установите ngrok
-npm install -g ngrok
-
-# Запустите туннель
-ngrok http 3000
-
-# Используйте полученный URL для тестирования в Telegram
-```
-
-## 📊 Отправляемые данные
-
-При оформлении заказа в LEADTEX отправляются следующие данные:
-
+Пример структуры запроса:
 ```json
 {
   "contact_by": "telegram_id",
-  "search": "USER_TELEGRAM_ID",
+  "search": "123456789",
   "variables": {
-    "order_id": "ORD-1706543210000",
-    "order_total": "990",
-    "order_subtotal": "990",
-    "order_delivery": "0",
-    "order_items_count": "1",
-    "order_timestamp": "2024-01-29T12:00:00.000Z",
-    "order_items": "[{\"name\":\"Брелок Premium\",\"quantity\":1,\"price\":990}]",
-    "customer_name": "Иван Иванов",
-    "customer_phone": "+7 (900) 123-45-67",
-    "customer_email": "email@example.com",
+    "order_id": "ORDER-1234567890",
+    "order_total": "2990",
+    "customer_name": "Иван Петров",
+    "customer_phone": "+7 (999) 123-45-67",
     "delivery_city": "Москва",
-    "delivery_address": "ул. Примерная, д. 1, кв. 1",
-    "order_comment": "Комментарий к заказу",
-    "source": "mini_app_keychain_shop",
-    "telegram_user_name": "Иван Иванов"
+    "delivery_address": "ул. Пушкина, д. 10",
+    "...": "..."
   }
 }
 ```
 
-## 🔒 Безопасность
+## Важные замечания
 
-- ✅ Все данные передаются через HTTPS
-- ✅ Валидация форм на клиенте
-- ✅ Безопасное хранение данных корзины в localStorage
-- ✅ Защита от XSS и CSRF атак
-- ✅ Заголовки безопасности настроены в vercel.json
+1. **Контакт должен существовать в LeadTex до оформления заказа** - пользователь должен сначала написать `/start` вашему боту, чтобы LeadTex создал контакт с его `telegram_id`.
 
-## 📝 Лицензия
+2. **Для тестирования** в файле `js/config.js` можно включить режим разработки:
+   ```javascript
+   DEV_MODE: true,
+   MOCK_USER: {
+       id: 123456789,
+       first_name: 'Тест',
+       last_name: 'Пользователь',
+       username: 'testuser',
+       language_code: 'ru'
+   }
+   ```
 
-MIT License - смотрите файл [LICENSE](LICENSE)
+3. **Домен LeadTex** используется автоматически через систему вебхуков, что соответствует требованиям Telegram для запуска Mini Apps.
 
-## 👨‍💻 Автор
+## Запуск локально
 
-Создано для интеграции с LEADTEX CRM
+1. Установите зависимости: `npm install` (если есть package.json)
+2. Запустите локальный сервер: `npm run dev`
+3. Откройте приложение через Telegram Web App для корректной работы всех функций
 
-## 🤝 Поддержка
+## Деплой
 
-Если у вас возникли вопросы:
+Проект настроен для деплоя на Vercel. При пуше в репозиторий автоматически происходит сборка и деплой.
 
-1. Проверьте [документацию LEADTEX](https://docs.leadteh.ru)
-2. Проверьте [Telegram Bot API](https://core.telegram.org/bots/webapps)
-3. Создайте Issue в GitHub
+## Отладка
 
-## 🎉 Благодарности
+Для проверки `telegram_id` в консоли браузера выполните:
+```javascript
+console.log(telegramApp.getUserId());
+console.log(telegramApp.getUser());
+```
 
-- [Telegram](https://telegram.org/) за отличный Bot API
-- [LEADTEX](https://leadteh.ru/) за мощную CRM систему
-- [Vercel](https://vercel.com/) за бесплатный хостинг
+При оформлении заказа в консоли браузера вы увидите:
+```
+📤 Отправка заказа: { customer: {...}, order: {...}, telegram: {...} }
+✅ Заказ успешно отправлен в LEADTEX
+```
 
----
+## Bridge компонент
 
-**Сделано с ❤️ для вашего бизнеса**
+Bridge компонент находится в директории `bridge/` и обеспечивает точную атрибуцию рекламных кампаний. Подробнее см. `bridge/README.md`.

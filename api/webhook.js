@@ -7,8 +7,8 @@ export default async function handler(req, res) {
         return res.status(405).json({ error: 'Method not allowed' });
     }
 
-    // URL вебхука LEADTEX
-    const WEBHOOK_URL = 'https://rb786743.leadteh.ru/inner_webhook/1f829cc9-3da3-4485-a97d-350e0d34baa1';
+    // URL вебхука SMS-NJMAX (MAX-мессенджер) в LeadTeX
+    const WEBHOOK_URL = 'https://rb786743.leadteh.ru/inner_webhook/ed15c46a-5b2b-44fb-82b1-283059365c41';
 
     try {
         // Проксируем запрос к LEADTEX

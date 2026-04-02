@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Beauty Studio - Запись на услуги</title>
+    <title>Keychain Shop - Интернет-магазин брелков</title>
 
     <!-- Telegram Web App Script -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="css/style.css">
 
     <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💅</text></svg>">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔑</text></svg>">
 </head>
 <body>
     <!-- Loader -->
@@ -26,187 +26,134 @@
         <!-- Header -->
         <header class="header">
             <div class="header-content">
-                <div class="logo" onclick="showServices()">
-                    <span class="logo-icon" id="studioLogo">💅</span>
-                    <span class="logo-text" id="studioName">Beauty Studio</span>
+                <div class="logo" onclick="showProducts()">
+                    <span class="logo-icon" id="shopLogo">🔑</span>
+                    <span class="logo-text" id="shopName">Keychain Shop</span>
                 </div>
                 <div class="header-actions">
-                    <button class="header-btn" id="myBookingsBtn" onclick="showMyBookings()">
-                        <span class="header-btn-icon">📋</span>
-                        <span class="header-btn-badge" id="bookingsBadge" style="display: none;">0</span>
+                    <button class="header-btn" id="cartBtn" onclick="showCart()">
+                        <span class="header-btn-icon">🛒</span>
+                        <span class="header-btn-badge" id="cartBadge" style="display: none;">0</span>
                     </button>
                 </div>
             </div>
         </header>
 
         <!-- ===================================
-             СЕКЦИЯ 1: КАТАЛОГ УСЛУГ
+             СЕКЦИЯ 1: КАТАЛОГ ТОВАРОВ
              =================================== -->
-        <section class="services-section" id="servicesSection">
+        <section class="products-section" id="productsSection">
             <!-- Категории -->
             <div class="categories-scroll">
                 <div class="categories" id="categories"></div>
             </div>
 
-            <!-- Сетка услуг -->
-            <div class="services-grid" id="servicesGrid"></div>
+            <!-- Сетка товаров -->
+            <div class="products-grid" id="productsGrid"></div>
         </section>
 
         <!-- ===================================
-             СЕКЦИЯ 2: ВЫБОР МАСТЕРА
+             СЕКЦИЯ 2: ДЕТАЛИ ТОВАРА
              =================================== -->
-        <section class="masters-section" id="mastersSection" style="display: none;">
+        <section class="product-details-section" id="productDetailsSection" style="display: none;">
             <div class="section-header">
-                <button class="back-btn" onclick="showServices()">
+                <button class="back-btn" onclick="showProducts()">
                     <span class="back-icon">←</span> Назад
                 </button>
-                <h2>Выберите мастера</h2>
+                <h2>Детали товара</h2>
             </div>
 
-            <!-- Выбранная услуга -->
-            <div class="selected-service-card" id="selectedServiceCard"></div>
-
-            <!-- Список мастеров -->
-            <div class="masters-list" id="mastersList"></div>
+            <!-- Детали товара -->
+            <div class="product-details-container" id="productDetails"></div>
         </section>
 
         <!-- ===================================
-             СЕКЦИЯ 3: ВЫБОР ДАТЫ И ВРЕМЕНИ
+             СЕКЦИЯ 3: КОРЗИНА
              =================================== -->
-        <section class="booking-section" id="bookingSection" style="display: none;">
+        <section class="cart-section" id="cartSection" style="display: none;">
             <div class="section-header">
-                <button class="back-btn" onclick="goBackFromBooking()">
+                <button class="back-btn" onclick="showProducts()">
                     <span class="back-icon">←</span> Назад
                 </button>
-                <h2>Выберите дату и время</h2>
+                <h2>Корзина</h2>
             </div>
 
-            <!-- Информация о выборе -->
-            <div class="booking-info-card" id="bookingInfoCard"></div>
-
-            <!-- Календарь -->
-            <div class="calendar-section">
-                <h3 class="calendar-title">Выберите дату</h3>
-                <div class="calendar-scroll">
-                    <div class="calendar-days" id="calendarDays"></div>
+            <!-- Товары в корзине -->
+            <div class="cart-container">
+                <div class="cart-items" id="cartItems"></div>
+                
+                <div class="cart-summary">
+                    <div class="cart-total">
+                        <span>Итого:</span>
+                        <span id="cartTotal">0 ₽</span>
+                    </div>
+                    <button class="btn-primary" id="checkoutBtn" onclick="showCheckout()" style="display: none;">
+                        <span>Оформить заказ</span>
+                        <span class="btn-arrow">→</span>
+                    </button>
                 </div>
             </div>
-
-            <!-- Выбор времени -->
-            <div class="time-section" id="timeSection" style="display: none;">
-                <h3 class="time-title">Выберите время</h3>
-                <div class="time-slots" id="timeSlots"></div>
-            </div>
-
-            <!-- Кнопка подтверждения -->
-            <div class="booking-actions" id="bookingActions" style="display: none;">
-                <button class="btn-primary" onclick="showConfirmation()">
-                    <span>Продолжить</span>
-                    <span class="btn-arrow">→</span>
-                </button>
-            </div>
         </section>
 
         <!-- ===================================
-             СЕКЦИЯ 4: ПОДТВЕРЖДЕНИЕ ЗАПИСИ
+             СЕКЦИЯ 4: ОФОРМЛЕНИЕ ЗАКАЗА
              =================================== -->
-        <section class="confirmation-section" id="confirmationSection" style="display: none;">
+        <section class="checkout-section" id="checkoutSection" style="display: none;">
             <div class="section-header">
-                <button class="back-btn" onclick="showBooking()">
+                <button class="back-btn" onclick="showCart()">
                     <span class="back-icon">←</span> Назад
                 </button>
-                <h2>Подтверждение записи</h2>
+                <h2>Оформление заказа</h2>
             </div>
 
-            <!-- Детали записи -->
-            <div class="confirmation-card">
-                <div class="confirmation-details" id="confirmationDetails"></div>
-            </div>
-
-            <!-- Контактные данные -->
-            <form id="bookingForm" onsubmit="submitBooking(event)">
-                <div class="form-section">
-                    <h3>Контактные данные</h3>
-
-                    <div class="form-group">
-                        <label for="customerName">Имя *</label>
-                        <input type="text" id="customerName" required placeholder="Введите ваше имя">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="customerPhone">Телефон *</label>
-                        <input type="tel" id="customerPhone" required placeholder="+7 (___) ___-__-__">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="customerComment">Комментарий (необязательно)</label>
-                        <textarea id="customerComment" rows="3" placeholder="Ваши пожелания"></textarea>
-                    </div>
-                </div>
-
-                <button type="submit" class="btn-primary" id="submitBookingBtn">
-                    <span>Записаться</span>
-                    <span id="bookingPrice">0 ₽</span>
-                </button>
-            </form>
+            <!-- Форма оформления заказа -->
+            <div class="checkout-container" id="checkoutForm"></div>
         </section>
 
         <!-- ===================================
-             СЕКЦИЯ 5: УСПЕШНАЯ ЗАПИСЬ
+             СЕКЦИЯ 5: УСПЕШНЫЙ ЗАКАЗ
              =================================== -->
         <section class="success-section" id="successSection" style="display: none;">
             <div class="success-animation">
                 <div class="success-icon">✓</div>
             </div>
-            <h2>Вы записаны!</h2>
+            <h2>Заказ оформлен!</h2>
             <p class="success-message">
-                Ждём вас в указанное время. Напоминание придёт за день до визита.
+                Ваш заказ принят. Мы свяжемся с вами для подтверждения.
             </p>
             <div class="success-details" id="successDetails"></div>
             <div class="success-actions">
-                <button class="btn-primary" onclick="showMyBookings()">
-                    <span>Мои записи</span>
+                <button class="btn-primary" onclick="showMyOrders()">
+                    <span>Мои заказы</span>
                     <span class="btn-arrow">→</span>
                 </button>
                 <button class="btn-secondary" onclick="resetApp()">
-                    Записаться ещё
+                    Заказать ещё
                 </button>
             </div>
         </section>
 
         <!-- ===================================
-             СЕКЦИЯ 6: МОИ ЗАПИСИ
+             СЕКЦИЯ 6: МОИ ЗАКАЗЫ
              =================================== -->
-        <section class="my-bookings-section" id="myBookingsSection" style="display: none;">
+        <section class="my-orders-section" id="myOrdersSection" style="display: none;">
             <div class="section-header">
-                <button class="back-btn" onclick="showServices()">
+                <button class="back-btn" onclick="showProducts()">
                     <span class="back-icon">←</span> Назад
                 </button>
-                <h2>Мои записи</h2>
+                <h2>Мои заказы</h2>
             </div>
 
             <!-- Пустое состояние -->
-            <div id="noBookings" class="empty-state">
-                <div class="empty-icon">📅</div>
-                <h3>Записей пока нет</h3>
-                <p>Запишитесь на услугу, и она появится здесь</p>
-                <button class="btn-secondary" onclick="showServices()">Выбрать услугу</button>
+            <div id="noOrders" class="empty-state">
+                <div class="empty-icon">📦</div>
+                <h3>Заказов пока нет</h3>
+                <p>После оформления заказа он появится здесь</p>
+                <button class="btn-secondary" onclick="showProducts()">Сделать заказ</button>
             </div>
 
-            <!-- Список записей -->
-            <div id="bookingsList" class="bookings-list" style="display: none;">
-                <!-- Предстоящие -->
-                <div class="bookings-group" id="upcomingBookings">
-                    <h3 class="bookings-group-title">Предстоящие</h3>
-                    <div class="bookings-items" id="upcomingBookingsItems"></div>
-                </div>
-
-                <!-- Прошедшие -->
-                <div class="bookings-group" id="pastBookings" style="display: none;">
-                    <h3 class="bookings-group-title">Прошедшие</h3>
-                    <div class="bookings-items" id="pastBookingsItems"></div>
-                </div>
-            </div>
+            <!-- Список заказов -->
+            <div id="ordersList" class="orders-list" style="display: none;"></div>
         </section>
 
     </div>
@@ -214,7 +161,6 @@
     <!-- Scripts -->
     <script src="js/config.js"></script>
     <script src="js/telegram.js"></script>
-    <script src="js/booking.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>

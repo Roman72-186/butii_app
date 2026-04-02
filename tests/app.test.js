@@ -381,6 +381,11 @@ describe('App', () => {
 
     describe('sendToLeadtex()', () => {
 
+        const normalizePhone = (phone) => {
+            const digits = phone.replace(/\D/g, '');
+            return '+' + (digits.startsWith('8') ? '7' + digits.slice(1) : digits);
+        };
+
         const sendToLeadtex = async (orderData) => {
             const response = await fetch(CONFIG.WEBHOOK_URL, {
                 method: 'POST',
@@ -388,12 +393,13 @@ describe('App', () => {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    contact_by: 'telegram_id',
-                    search: orderData.telegram.userId.toString(),
+                    contact_by: 'phone',
+                    search: normalizePhone(orderData.customer.phone),
                     variables: {
                         order_id: orderData.order.orderId,
                         order_total: orderData.order.total.toString(),
-                        customer_name: orderData.customer.name
+                        customer_name: orderData.customer.name,
+                        telegram_id: orderData.telegram.userId.toString()
                     }
                 })
             });
@@ -402,7 +408,7 @@ describe('App', () => {
         };
 
         const testOrderData = {
-            customer: { name: 'Иван', phone: '+7999', email: 'test@test.com' },
+            customer: { name: 'Иван', phone: '+7 (999) 123-45-67', email: 'test@test.com' },
             delivery: { city: 'Москва', address: 'Улица 1' },
             comment: 'Тест',
             order: {
@@ -444,14 +450,23 @@ describe('App', () => {
             expect(result).toBe(false);
         });
 
-        test('должна отправлять telegram_id в поле search', async () => {
+        test('должна искать контакт по нормализованному телефону', async () => {
             global.fetch.mockResolvedValueOnce({ ok: true });
 
             await sendToLeadtex(testOrderData);
 
             const callBody = JSON.parse(fetch.mock.calls[0][1].body);
-            expect(callBody.contact_by).toBe('telegram_id');
-            expect(callBody.search).toBe('123456789');
+            expect(callBody.contact_by).toBe('phone');
+            expect(callBody.search).toBe('+79991234567');
+        });
+
+        test('должна включать telegram_id в variables', async () => {
+            global.fetch.mockResolvedValueOnce({ ok: true });
+
+            await sendToLeadtex(testOrderData);
+
+            const callBody = JSON.parse(fetch.mock.calls[0][1].body);
+            expect(callBody.variables.telegram_id).toBe('123456789');
         });
 
     });

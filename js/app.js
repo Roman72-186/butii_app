@@ -1,11 +1,11 @@
 // ===================================
-// BEAUTY STUDIO - ГЛАВНОЕ ПРИЛОЖЕНИЕ
+// KEYCHAIN SHOP - ГЛАВНОЕ ПРИЛОЖЕНИЕ
 // ===================================
 
 // Состояние приложения
 let currentCategory = 'all';
-let selectedDate = null;
-let selectedTime = null;
+let cart = [];
+let currentProduct = null;
 
 // ===================================
 // ИНИЦИАЛИЗАЦИЯ
@@ -26,10 +26,10 @@ function init() {
 
     // Рендер начальной страницы
     renderCategories();
-    renderServices();
+    renderProducts();
 
-    // Обновить бейдж записей
-    updateBookingsBadge();
+    // Обновить бейдж корзины
+    updateCartBadge();
 
     // Инициализация маски телефона
     initPhoneMask();
@@ -42,11 +42,11 @@ function init() {
 }
 
 function setupHeader() {
-    const studioLogo = document.getElementById('studioLogo');
-    const studioName = document.getElementById('studioName');
+    const shopLogo = document.getElementById('shopLogo');
+    const shopName = document.getElementById('shopName');
 
-    if (studioLogo) studioLogo.textContent = CONFIG.STUDIO.logo;
-    if (studioName) studioName.textContent = CONFIG.STUDIO.name;
+    if (shopLogo) shopLogo.textContent = CONFIG.SHOP.logo;
+    if (shopName) shopName.textContent = CONFIG.SHOP.name;
 }
 
 // ===================================
@@ -72,96 +72,46 @@ function showSection(sectionId) {
     }
 }
 
-function showServices() {
-    showSection('servicesSection');
-    bookingManager.resetCurrentBooking();
-    selectedDate = null;
-    selectedTime = null;
+function showProducts() {
+    showSection('productsSection');
+    currentProduct = null;
 }
 
-function showMasters(serviceId) {
-    // Начать бронирование
-    bookingManager.startBooking(serviceId);
+function showProduct(productId) {
+    const product = CONFIG.getProductById(productId);
+    if (!product) return;
 
-    // Рендер выбранной услуги
-    renderSelectedService();
-
-    // Рендер списка мастеров
-    renderMasters();
-
-    showSection('mastersSection');
+    currentProduct = product;
+    renderProductDetails(product);
+    showSection('productDetailsSection');
 }
 
-function showBooking(masterId) {
-    // Если передан masterId, выбираем мастера
-    if (masterId) {
-        bookingManager.selectMaster(masterId);
-    }
-
-    // Рендер информации о бронировании
-    renderBookingInfo();
-
-    // Рендер календаря
-    renderCalendar();
-
-    // Скрыть секцию времени до выбора даты
-    document.getElementById('timeSection').style.display = 'none';
-    document.getElementById('bookingActions').style.display = 'none';
-
-    showSection('bookingSection');
+function showCart() {
+    renderCart();
+    showSection('cartSection');
 }
 
-function goBackFromBooking() {
-    const booking = bookingManager.getCurrentBooking();
-    if (booking && booking.serviceId) {
-        showMasters(booking.serviceId);
-    } else {
-        showServices();
-    }
+function showCheckout() {
+    renderCheckout();
+    showSection('checkoutSection');
 }
 
-function showConfirmation() {
-    // Рендер деталей для подтверждения
-    renderConfirmationDetails();
-
-    // Заполнить имя из Telegram если есть
-    if (typeof telegramApp !== 'undefined') {
-        const user = telegramApp.getUser();
-        if (user && user.first_name) {
-            const nameInput = document.getElementById('customerName');
-            if (nameInput && !nameInput.value) {
-                nameInput.value = user.first_name + (user.last_name ? ' ' + user.last_name : '');
-            }
-        }
-    }
-
-    // Установить цену на кнопку
-    const booking = bookingManager.getCurrentBooking();
-    if (booking) {
-        document.getElementById('bookingPrice').textContent = CONFIG.formatPrice(booking.service.price);
-    }
-
-    showSection('confirmationSection');
-}
-
-function showSuccess(booking) {
-    renderSuccessDetails(booking);
+function showSuccess(order) {
+    renderSuccessDetails(order);
     showSection('successSection');
 }
 
-function showMyBookings() {
-    renderMyBookings();
-    showSection('myBookingsSection');
+function showMyOrders() {
+    renderMyOrders();
+    showSection('myOrdersSection');
 }
 
 function resetApp() {
-    bookingManager.resetCurrentBooking();
-    selectedDate = null;
-    selectedTime = null;
+    currentProduct = null;
     currentCategory = 'all';
     renderCategories();
-    renderServices();
-    showServices();
+    renderProducts();
+    showProducts();
 }
 
 // ===================================
@@ -184,7 +134,7 @@ function renderCategories() {
 function selectCategory(categoryId) {
     currentCategory = categoryId;
     renderCategories();
-    renderServices();
+    renderProducts();
 
     if (typeof telegramApp !== 'undefined') {
         telegramApp.hapticFeedback('light');
@@ -192,277 +142,271 @@ function selectCategory(categoryId) {
 }
 
 // ===================================
-// РЕНДЕРИНГ УСЛУГ
+// РЕНДЕРИНГ ПРОДУКТОВ
 // ===================================
 
-function renderServices() {
-    const container = document.getElementById('servicesGrid');
+function renderProducts() {
+    const container = document.getElementById('productsGrid');
     if (!container) return;
 
-    const services = CONFIG.getServicesByCategory(currentCategory);
+    const products = CONFIG.getProductsByCategory(currentCategory);
 
-    container.innerHTML = services.map(service => `
-        <div class="service-card" onclick="showMasters('${service.id}')">
-            <div class="service-card-image">
-                <img src="${service.image}" alt="${service.name}" loading="lazy">
-                <span class="service-card-duration">${CONFIG.formatDuration(service.duration)}</span>
+    container.innerHTML = products.map(product => `
+        <div class="product-card" onclick="showProduct('${product.id}')">
+            <div class="product-card-image">
+                <img src="${product.image}" alt="${product.name}" loading="lazy">
             </div>
-            <div class="service-card-body">
-                <div class="service-card-name">${service.name}</div>
-                <div class="service-card-price">${CONFIG.formatPrice(service.price)}</div>
+            <div class="product-card-body">
+                <div class="product-card-name">${product.name}</div>
+                <div class="product-card-price">${CONFIG.formatPrice(product.price)}</div>
+                <div class="product-card-rating">${CONFIG.formatRating(product.rating)}</div>
             </div>
         </div>
     `).join('');
 }
 
 // ===================================
-// РЕНДЕРИНГ ВЫБРАННОЙ УСЛУГИ
+// РЕНДЕРИНГ ДЕТАЛЕЙ ПРОДУКТА
 // ===================================
 
-function renderSelectedService() {
-    const container = document.getElementById('selectedServiceCard');
-    const booking = bookingManager.getCurrentBooking();
-
-    if (!container || !booking) return;
+function renderProductDetails(product) {
+    const container = document.getElementById('productDetails');
+    if (!container || !product) return;
 
     container.innerHTML = `
-        <img src="${booking.service.image}" alt="${booking.service.name}" class="selected-service-image">
-        <div class="selected-service-info">
-            <div class="selected-service-name">${booking.service.name}</div>
-            <div class="selected-service-meta">
-                <span>${CONFIG.formatPrice(booking.service.price)}</span>
-                <span>${CONFIG.formatDuration(booking.service.duration)}</span>
+        <div class="product-detail-image">
+            <img src="${product.image}" alt="${product.name}">
+        </div>
+        <div class="product-detail-info">
+            <h2>${product.name}</h2>
+            <div class="product-detail-price">${CONFIG.formatPrice(product.price)}</div>
+            <div class="product-detail-rating">${CONFIG.formatRating(product.rating)}</div>
+            <p class="product-detail-description">${product.description}</p>
+            
+            <div class="product-detail-actions">
+                <button class="btn-primary" onclick="addToCart('${product.id}', 1)">
+                    <span>Добавить в корзину</span>
+                    <span class="btn-price">${CONFIG.formatPrice(product.price)}</span>
+                </button>
             </div>
         </div>
     `;
 }
 
 // ===================================
-// РЕНДЕРИНГ МАСТЕРОВ
+// РАБОТА С КОРЗИНОЙ
 // ===================================
 
-function renderMasters() {
-    const container = document.getElementById('mastersList');
-    const booking = bookingManager.getCurrentBooking();
+function addToCart(productId, quantity = 1) {
+    const product = CONFIG.getProductById(productId);
+    if (!product) return;
 
-    if (!container || !booking) return;
+    // Проверить, есть ли уже такой продукт в корзине
+    const existingItem = cart.find(item => item.product.id === productId);
+    
+    if (existingItem) {
+        existingItem.quantity += quantity;
+    } else {
+        cart.push({
+            product: product,
+            quantity: quantity
+        });
+    }
 
-    const masters = CONFIG.getMastersForService(booking.serviceId);
+    updateCartBadge();
+    
+    if (typeof telegramApp !== 'undefined') {
+        telegramApp.hapticFeedback('success');
+        telegramApp.showAlert(`Товар добавлен в корзину!`);
+    }
+}
 
-    container.innerHTML = masters.map(master => `
-        <div class="master-card" onclick="showBooking('${master.id}')">
-            <img src="${master.photo}" alt="${master.name}" class="master-photo">
-            <div class="master-info">
-                <div class="master-name">${master.name}</div>
-                <div class="master-description">${master.description}</div>
-                <div class="master-rating">
-                    <span class="stars">${'★'.repeat(Math.floor(master.rating))}${'☆'.repeat(5 - Math.floor(master.rating))}</span>
-                    <span class="rating-value">${master.rating}</span>
-                    <span class="reviews-count">(${master.reviews} отзывов)</span>
+function removeFromCart(productId) {
+    cart = cart.filter(item => item.product.id !== productId);
+    updateCartBadge();
+    renderCart();
+}
+
+function updateCartItemQuantity(productId, quantity) {
+    if (quantity <= 0) {
+        removeFromCart(productId);
+        return;
+    }
+
+    const item = cart.find(item => item.product.id === productId);
+    if (item) {
+        item.quantity = quantity;
+        updateCartBadge();
+        renderCart();
+    }
+}
+
+function updateCartBadge() {
+    const badge = document.getElementById('cartBadge');
+    const count = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+    if (badge) {
+        if (count > 0) {
+            badge.textContent = count;
+            badge.style.display = 'flex';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+}
+
+function getCartTotal() {
+    return cart.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
+}
+
+function getCartItemCount() {
+    return cart.reduce((sum, item) => sum + item.quantity, 0);
+}
+
+// ===================================
+// РЕНДЕРИНГ КОРЗИНЫ
+// ===================================
+
+function renderCart() {
+    const container = document.getElementById('cartItems');
+    const totalElement = document.getElementById('cartTotal');
+    
+    if (!container || !totalElement) return;
+
+    if (cart.length === 0) {
+        container.innerHTML = `
+            <div class="empty-cart">
+                <div class="empty-cart-icon">🛒</div>
+                <h3>Корзина пуста</h3>
+                <p>Добавьте товары в корзину, чтобы оформить заказ</p>
+                <button class="btn-secondary" onclick="showProducts()">Выбрать товары</button>
+            </div>
+        `;
+        totalElement.textContent = CONFIG.formatPrice(0);
+        document.getElementById('checkoutBtn').style.display = 'none';
+        return;
+    }
+
+    container.innerHTML = cart.map(item => `
+        <div class="cart-item">
+            <img src="${item.product.image}" alt="${item.product.name}" class="cart-item-image">
+            <div class="cart-item-info">
+                <div class="cart-item-name">${item.product.name}</div>
+                <div class="cart-item-price">${CONFIG.formatPrice(item.product.price)}</div>
+            </div>
+            <div class="cart-item-controls">
+                <button class="quantity-btn" onclick="updateCartItemQuantity('${item.product.id}', ${item.quantity - 1})">-</button>
+                <span class="quantity">${item.quantity}</span>
+                <button class="quantity-btn" onclick="updateCartItemQuantity('${item.product.id}', ${item.quantity + 1})">+</button>
+            </div>
+            <div class="cart-item-total">${CONFIG.formatPrice(item.product.price * item.quantity)}</div>
+            <button class="remove-item-btn" onclick="removeFromCart('${item.product.id}')">✕</button>
+        </div>
+    `).join('');
+
+    totalElement.textContent = CONFIG.formatPrice(getCartTotal());
+    document.getElementById('checkoutBtn').style.display = 'block';
+}
+
+// ===================================
+// РЕНДЕРИНГ ОФОРМЛЕНИЯ ЗАКАЗА
+// ===================================
+
+function renderCheckout() {
+    const container = document.getElementById('checkoutForm');
+    if (!container) return;
+
+    container.innerHTML = `
+        <div class="checkout-summary">
+            <h3>Состав заказа</h3>
+            <div class="checkout-items">
+                ${cart.map(item => `
+                    <div class="checkout-item">
+                        <span class="checkout-item-name">${item.product.name}</span>
+                        <span class="checkout-item-qty">×${item.quantity}</span>
+                        <span class="checkout-item-price">${CONFIG.formatPrice(item.product.price * item.quantity)}</span>
+                    </div>
+                `).join('')}
+            </div>
+            <div class="checkout-total">
+                <span>Итого:</span>
+                <span id="checkoutTotal">${CONFIG.formatPrice(getCartTotal())}</span>
+            </div>
+        </div>
+
+        <form id="orderForm" onsubmit="submitOrder(event)">
+            <div class="form-section">
+                <h3>Контактные данные</h3>
+
+                <div class="form-group">
+                    <label for="customerName">Имя *</label>
+                    <input type="text" id="customerName" required placeholder="Введите ваше имя">
+                </div>
+
+                <div class="form-group">
+                    <label for="customerPhone">Телефон *</label>
+                    <input type="tel" id="customerPhone" required placeholder="+7 (___) ___-__-__">
+                </div>
+
+                <div class="form-group">
+                    <label for="customerEmail">Email (необязательно)</label>
+                    <input type="email" id="customerEmail" placeholder="your@email.com">
                 </div>
             </div>
-            <span class="master-arrow">→</span>
-        </div>
-    `).join('');
-}
 
-// ===================================
-// РЕНДЕРИНГ ИНФОРМАЦИИ О БРОНИРОВАНИИ
-// ===================================
+            <div class="form-section">
+                <h3>Доставка</h3>
 
-function renderBookingInfo() {
-    const container = document.getElementById('bookingInfoCard');
-    const booking = bookingManager.getCurrentBooking();
+                <div class="form-group">
+                    <label for="deliveryCity">Город *</label>
+                    <input type="text" id="deliveryCity" required placeholder="Введите город">
+                </div>
 
-    if (!container || !booking) return;
-
-    container.innerHTML = `
-        <div class="booking-info-row">
-            <span class="booking-info-icon">✨</span>
-            <div class="booking-info-text">
-                <div class="booking-info-label">Услуга</div>
-                <div class="booking-info-value">${booking.service.name}</div>
+                <div class="form-group">
+                    <label for="deliveryAddress">Адрес *</label>
+                    <textarea id="deliveryAddress" rows="2" required placeholder="Улица, дом, квартира"></textarea>
+                </div>
             </div>
-        </div>
-        <div class="booking-info-row">
-            <span class="booking-info-icon">👤</span>
-            <div class="booking-info-text">
-                <div class="booking-info-label">Мастер</div>
-                <div class="booking-info-value">${booking.master.name}</div>
+
+            <div class="form-section">
+                <h3>Комментарий к заказу</h3>
+                <div class="form-group">
+                    <textarea id="orderComment" rows="3" placeholder="Ваши пожелания"></textarea>
+                </div>
             </div>
-        </div>
-        <div class="booking-info-row">
-            <span class="booking-info-icon">💰</span>
-            <div class="booking-info-text">
-                <div class="booking-info-label">Стоимость</div>
-                <div class="booking-info-value">${CONFIG.formatPrice(booking.service.price)} • ${CONFIG.formatDuration(booking.service.duration)}</div>
-            </div>
-        </div>
-    `;
-}
 
-// ===================================
-// РЕНДЕРИНГ КАЛЕНДАРЯ
-// ===================================
-
-function renderCalendar() {
-    const container = document.getElementById('calendarDays');
-    if (!container) return;
-
-    const dates = CONFIG.getBookingDates();
-
-    container.innerHTML = dates.map(d => {
-        let classes = 'calendar-day';
-        if (d.isToday) classes += ' today';
-        if (!d.isWorkDay) classes += ' disabled';
-        if (selectedDate === d.dateString) classes += ' selected';
-
-        return `
-            <div class="${classes}"
-                 onclick="${d.isWorkDay ? `selectDate('${d.dateString}')` : ''}"
-                 data-date="${d.dateString}">
-                <span class="day-name">${d.dayName}</span>
-                <span class="day-number">${d.dayNumber}</span>
-                <span class="day-month">${d.month}</span>
-            </div>
-        `;
-    }).join('');
-}
-
-function selectDate(dateString) {
-    selectedDate = dateString;
-    selectedTime = null;
-
-    // Обновить бронирование
-    bookingManager.selectDate(dateString);
-
-    // Обновить визуал календаря
-    document.querySelectorAll('.calendar-day').forEach(day => {
-        day.classList.remove('selected');
-        if (day.dataset.date === dateString) {
-            day.classList.add('selected');
-        }
-    });
-
-    // Показать и отрендерить слоты времени
-    renderTimeSlots();
-    document.getElementById('timeSection').style.display = 'block';
-
-    // Скрыть кнопку продолжить
-    document.getElementById('bookingActions').style.display = 'none';
-
-    if (typeof telegramApp !== 'undefined') {
-        telegramApp.hapticFeedback('light');
-    }
-}
-
-// ===================================
-// РЕНДЕРИНГ ВРЕМЕННЫХ СЛОТОВ
-// ===================================
-
-function renderTimeSlots() {
-    const container = document.getElementById('timeSlots');
-    const booking = bookingManager.getCurrentBooking();
-
-    if (!container || !booking || !selectedDate) return;
-
-    const allSlots = CONFIG.getTimeSlots();
-    const availableSlots = bookingManager.getAvailableSlots(
-        booking.masterId,
-        selectedDate,
-        booking.service.duration
-    );
-
-    container.innerHTML = allSlots.map(time => {
-        const isAvailable = availableSlots.includes(time);
-        let classes = 'time-slot';
-        if (!isAvailable) classes += ' disabled';
-        if (selectedTime === time) classes += ' selected';
-
-        return `
-            <button class="${classes}"
-                    onclick="${isAvailable ? `selectTime('${time}')` : ''}"
-                    ${!isAvailable ? 'disabled' : ''}>
-                ${time}
+            <button type="submit" class="btn-primary" id="placeOrderBtn">
+                <span>Оформить заказ</span>
+                <span id="orderTotal">${CONFIG.formatPrice(getCartTotal())}</span>
             </button>
-        `;
-    }).join('');
-}
+        </form>
+    `;
 
-function selectTime(time) {
-    selectedTime = time;
-
-    // Обновить бронирование
-    bookingManager.selectTime(time);
-
-    // Обновить визуал
-    document.querySelectorAll('.time-slot').forEach(slot => {
-        slot.classList.remove('selected');
-        if (slot.textContent.trim() === time) {
-            slot.classList.add('selected');
-        }
-    });
-
-    // Показать кнопку продолжить
-    document.getElementById('bookingActions').style.display = 'block';
-
+    // Заполнить имя из Telegram если есть
     if (typeof telegramApp !== 'undefined') {
-        telegramApp.hapticFeedback('medium');
+        const user = telegramApp.getUser();
+        if (user && user.first_name) {
+            const nameInput = document.getElementById('customerName');
+            if (nameInput && !nameInput.value) {
+                nameInput.value = user.first_name + (user.last_name ? ' ' + user.last_name : '');
+            }
+        }
     }
 }
 
 // ===================================
-// РЕНДЕРИНГ ПОДТВЕРЖДЕНИЯ
+// ОФОРМЛЕНИЕ ЗАКАЗА
 // ===================================
 
-function renderConfirmationDetails() {
-    const container = document.getElementById('confirmationDetails');
-    const booking = bookingManager.getCurrentBooking();
-
-    if (!container || !booking) return;
-
-    container.innerHTML = `
-        <div class="confirmation-row">
-            <div class="confirmation-icon">✨</div>
-            <div class="confirmation-content">
-                <div class="confirmation-label">Услуга</div>
-                <div class="confirmation-value">${booking.service.name}</div>
-            </div>
-        </div>
-        <div class="confirmation-row">
-            <div class="confirmation-icon">👤</div>
-            <div class="confirmation-content">
-                <div class="confirmation-label">Мастер</div>
-                <div class="confirmation-value">${booking.master.name}</div>
-            </div>
-        </div>
-        <div class="confirmation-row">
-            <div class="confirmation-icon">📅</div>
-            <div class="confirmation-content">
-                <div class="confirmation-label">Дата и время</div>
-                <div class="confirmation-value">${CONFIG.formatDisplayDate(booking.date)}, ${booking.time}</div>
-            </div>
-        </div>
-        <div class="confirmation-row">
-            <div class="confirmation-icon">💰</div>
-            <div class="confirmation-content">
-                <div class="confirmation-label">Стоимость</div>
-                <div class="confirmation-value">${CONFIG.formatPrice(booking.service.price)}</div>
-            </div>
-        </div>
-    `;
-}
-
-// ===================================
-// ОТПРАВКА БРОНИРОВАНИЯ
-// ===================================
-
-async function submitBooking(event) {
+async function submitOrder(event) {
     event.preventDefault();
 
     const nameInput = document.getElementById('customerName');
     const phoneInput = document.getElementById('customerPhone');
-    const commentInput = document.getElementById('customerComment');
+    const emailInput = document.getElementById('customerEmail');
+    const cityInput = document.getElementById('deliveryCity');
+    const addressInput = document.getElementById('deliveryAddress');
+    const commentInput = document.getElementById('orderComment');
 
     // Валидация
     if (!nameInput.value.trim()) {
@@ -477,50 +421,77 @@ async function submitBooking(event) {
         return;
     }
 
-    // Установить контактные данные
-    bookingManager.setCustomerInfo(
-        nameInput.value.trim(),
-        phoneInput.value.trim(),
-        commentInput.value.trim()
-    );
-
-    // Подтвердить бронирование
-    const confirmedBooking = bookingManager.confirmBooking();
-
-    if (!confirmedBooking) {
-        alert('Ошибка при создании записи. Попробуйте ещё раз.');
+    if (!cityInput.value.trim()) {
+        alert('Пожалуйста, введите город доставки');
+        cityInput.focus();
         return;
     }
 
+    if (!addressInput.value.trim()) {
+        alert('Пожалуйста, введите адрес доставки');
+        addressInput.focus();
+        return;
+    }
+
+    // Подготовка данных заказа
+    const order = {
+        id: 'ORDER-' + Date.now(),
+        items: cart.map(item => ({
+            id: item.product.id,
+            name: item.product.name,
+            price: item.product.price,
+            quantity: item.quantity,
+            total: item.product.price * item.quantity
+        })),
+        total: getCartTotal(),
+        customer: {
+            name: nameInput.value.trim(),
+            phone: phoneInput.value.trim(),
+            email: emailInput.value.trim()
+        },
+        delivery: {
+            city: cityInput.value.trim(),
+            address: addressInput.value.trim()
+        },
+        comment: commentInput.value.trim(),
+        timestamp: new Date().toISOString()
+    };
+
     // Отправить на сервер (webhook)
     try {
-        await sendBookingToServer(confirmedBooking);
+        await sendOrderToServer(order);
+        
+        // Очистить корзину
+        cart = [];
+        updateCartBadge();
+        
+        // Haptic feedback
+        if (typeof telegramApp !== 'undefined') {
+            telegramApp.hapticFeedback('success');
+        }
+
+        // Показать успех
+        showSuccess(order);
+
+        // Сбросить форму
+        document.getElementById('orderForm').reset();
     } catch (e) {
-        console.error('Failed to send booking to server:', e);
-        // Продолжаем даже если сервер не ответил - запись уже сохранена локально
+        console.error('Failed to send order to server:', e);
+        alert('Ошибка при отправке заказа. Попробуйте ещё раз.');
     }
-
-    // Haptic feedback
-    if (typeof telegramApp !== 'undefined') {
-        telegramApp.hapticFeedback('success');
-    }
-
-    // Обновить бейдж
-    updateBookingsBadge();
-
-    // Показать успех
-    showSuccess(confirmedBooking);
-
-    // Очистить форму
-    nameInput.value = '';
-    phoneInput.value = '';
-    commentInput.value = '';
 }
 
-async function sendBookingToServer(booking) {
+function normalizePhone(phone) {
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length === 10) return '+7' + digits;
+    if (digits.length === 11 && digits.startsWith('8')) return '+7' + digits.slice(1);
+    return '+' + digits;
+}
+
+async function sendOrderToServer(order) {
     // Надежное получение telegramId с fallback на localStorage и моковые данные
     let telegramId = localStorage.getItem('telegram_id');
-    
+
     if (!telegramId && window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe && window.Telegram.WebApp.initDataUnsafe.user) {
         telegramId = window.Telegram.WebApp.initDataUnsafe.user.id.toString();
         localStorage.setItem('telegram_id', telegramId);
@@ -530,54 +501,43 @@ async function sendBookingToServer(booking) {
         console.warn('Telegram ID не найден. Используется моковый пользователь.');
         telegramId = CONFIG.MOCK_USER.id.toString(); // Используем мок, если ID все еще нет
     }
-    
-    console.log('📤 Отправка бронирования в LEADTEX');
+
+    console.log('📤 Отправка заказа в LEADTEX');
     console.log('🆔 Telegram ID (из localStorage):', localStorage.getItem('telegram_id'));
     console.log('🆔 Telegram ID (из Telegram WebApp):', window.Telegram?.WebApp?.initDataUnsafe?.user?.id?.toString());
     console.log('🆔 Используемый Telegram ID:', telegramId);
-    
+
     // Подготовка данных для LEADTEX в соответствии с документацией
     const leadtexPayload = {
-        contact_by: 'telegram_id',
-        search: telegramId,
+        contact_by: 'phone',
+        search: normalizePhone(order.customer.phone),
         variables: {
-            order_id: booking.id,
-            order_total: booking.service.price.toString(),
-            order_subtotal: booking.service.price.toString(),
-            order_delivery: "0",
-            order_items_count: "1",
-            order_timestamp: new Date().toISOString(),
+            order_id: order.id,
+            order_total: order.total.toString(),
+            order_subtotal: order.total.toString(),
+            order_delivery: "300", // пример стоимости доставки
+            order_items_count: order.items.length.toString(),
+            order_timestamp: order.timestamp,
 
-            order_items: JSON.stringify([{
-                name: booking.service.name,
-                quantity: 1,
-                price: booking.service.price,
-                total: booking.service.price
-            }]),
+            order_items: JSON.stringify(order.items),
 
-            customer_name: booking.customerName,
-            customer_phone: booking.customerPhone,
-            customer_email: "", // не используется в бронировании
+            customer_name: order.customer.name,
+            customer_phone: order.customer.phone,
+            customer_email: order.customer.email,
 
-            delivery_city: "", // не используется в бронировании
-            delivery_address: "", // не используется в бронировании
+            delivery_city: order.delivery.city,
+            delivery_address: order.delivery.address,
 
-            order_comment: booking.customerComment,
+            order_comment: order.comment,
 
-            source: "mini_app_beauty_studio",
-            telegram_user_name: typeof telegramApp !== 'undefined' ? telegramApp.getUserName() : 'debug_user',
-            
-            // Дополнительные переменные для бронирования
-            booking_date: booking.date,
-            booking_time: booking.time,
-            booking_service: booking.service.name,
-            booking_master: booking.master.name,
-            booking_duration: booking.service.duration
+            source: "mini_app_keychain_max",
+            telegram_id: telegramId,
+            telegram_user_name: typeof telegramApp !== 'undefined' ? telegramApp.getUserName() : 'debug_user'
         }
     };
 
     console.log('📦 Payload для отправки:', leadtexPayload);
-    
+
     // Добавляем логирование URL и заголовков
     console.log('📡 Отправка запроса на URL:', CONFIG.WEBHOOK_URL);
     console.log('🏷️ Заголовки запроса:', {
@@ -597,7 +557,7 @@ async function sendBookingToServer(booking) {
 
     // Логирование результата отправки
     if (response.ok) {
-        console.log('✅ Запись успешно отправлена в LEADTEX:', leadtexPayload);
+        console.log('✅ Заказ успешно отправлен в LEADTEX:', leadtexPayload);
     } else {
         console.error('❌ Ошибка отправки в LEADTEX:', response.status, await response.text());
     }
@@ -606,168 +566,55 @@ async function sendBookingToServer(booking) {
 }
 
 // ===================================
-// РЕНДЕРИНГ УСПЕШНОЙ ЗАПИСИ
+// РЕНДЕРИНГ УСПЕШНОГО ЗАКАЗА
 // ===================================
 
-function renderSuccessDetails(booking) {
+function renderSuccessDetails(order) {
     const container = document.getElementById('successDetails');
-    if (!container || !booking) return;
+    if (!container || !order) return;
 
     container.innerHTML = `
-        <div class="success-detail-row">
-            <span class="success-detail-label">Услуга</span>
-            <span class="success-detail-value">${booking.service.name}</span>
+        <div class="success-order-id">Заказ №${order.id}</div>
+        <div class="success-order-items">
+            <h3>Состав заказа</h3>
+            ${order.items.map(item => `
+                <div class="success-order-item">
+                    <span class="item-name">${item.name}</span>
+                    <span class="item-qty">×${item.quantity}</span>
+                    <span class="item-price">${CONFIG.formatPrice(item.total)}</span>
+                </div>
+            `).join('')}
         </div>
-        <div class="success-detail-row">
-            <span class="success-detail-label">Мастер</span>
-            <span class="success-detail-value">${booking.master.name}</span>
+        <div class="success-order-total">
+            <span>Итого:</span>
+            <span>${CONFIG.formatPrice(order.total)}</span>
         </div>
-        <div class="success-detail-row">
-            <span class="success-detail-label">Дата</span>
-            <span class="success-detail-value">${CONFIG.formatDisplayDate(booking.date)}</span>
-        </div>
-        <div class="success-detail-row">
-            <span class="success-detail-label">Время</span>
-            <span class="success-detail-value">${booking.time}</span>
-        </div>
-        <div class="success-detail-row">
-            <span class="success-detail-label">Стоимость</span>
-            <span class="success-detail-value">${CONFIG.formatPrice(booking.service.price)}</span>
-        </div>
-    `;
-}
-
-// ===================================
-// МОИ ЗАПИСИ
-// ===================================
-
-function renderMyBookings() {
-    const upcomingBookings = bookingManager.getUpcomingBookings();
-    const pastBookings = bookingManager.getPastBookings();
-
-    const hasBookings = upcomingBookings.length > 0 || pastBookings.length > 0;
-
-    // Показать/скрыть пустое состояние
-    document.getElementById('noBookings').style.display = hasBookings ? 'none' : 'block';
-    document.getElementById('bookingsList').style.display = hasBookings ? 'block' : 'none';
-
-    if (!hasBookings) return;
-
-    // Предстоящие
-    const upcomingContainer = document.getElementById('upcomingBookingsItems');
-    const upcomingGroup = document.getElementById('upcomingBookings');
-
-    if (upcomingBookings.length > 0) {
-        upcomingGroup.style.display = 'block';
-        upcomingContainer.innerHTML = upcomingBookings.map(b => renderBookingItem(b, 'upcoming')).join('');
-    } else {
-        upcomingGroup.style.display = 'none';
-    }
-
-    // Прошедшие
-    const pastContainer = document.getElementById('pastBookingsItems');
-    const pastGroup = document.getElementById('pastBookings');
-
-    if (pastBookings.length > 0) {
-        pastGroup.style.display = 'block';
-        pastContainer.innerHTML = pastBookings.map(b => renderBookingItem(b, 'past')).join('');
-    } else {
-        pastGroup.style.display = 'none';
-    }
-}
-
-function renderBookingItem(booking, type) {
-    const statusClass = booking.status === 'cancelled' ? 'cancelled' : type;
-    const statusText = booking.status === 'cancelled' ? 'Отменена' : (type === 'upcoming' ? 'Предстоит' : 'Завершена');
-
-    return `
-        <div class="booking-item">
-            <div class="booking-item-header">
-                <span class="booking-item-service">${booking.service.name}</span>
-                <span class="booking-item-status ${statusClass}">${statusText}</span>
-            </div>
-            <div class="booking-item-details">
-                <div class="booking-item-detail">
-                    <span class="booking-item-detail-icon">👤</span>
-                    <span>${booking.master.name}</span>
-                </div>
-                <div class="booking-item-detail">
-                    <span class="booking-item-detail-icon">📅</span>
-                    <span>${CONFIG.formatDisplayDate(booking.date)}</span>
-                </div>
-                <div class="booking-item-detail">
-                    <span class="booking-item-detail-icon">🕐</span>
-                    <span>${booking.time}</span>
-                </div>
-                <div class="booking-item-detail">
-                    <span class="booking-item-detail-icon">💰</span>
-                    <span>${CONFIG.formatPrice(booking.service.price)}</span>
-                </div>
-            </div>
-            ${type === 'upcoming' && booking.status !== 'cancelled' ? `
-                <div class="booking-item-actions">
-                    <button class="booking-item-btn cancel" onclick="cancelBookingConfirm('${booking.id}')">
-                        Отменить запись
-                    </button>
-                </div>
-            ` : ''}
-            ${type === 'past' ? `
-                <div class="booking-item-actions">
-                    <button class="booking-item-btn rebook" onclick="rebookService('${booking.serviceId}')">
-                        Записаться снова
-                    </button>
-                </div>
-            ` : ''}
+        <div class="success-delivery-info">
+            <h3>Доставка</h3>
+            <p><strong>Город:</strong> ${order.delivery.city}</p>
+            <p><strong>Адрес:</strong> ${order.delivery.address}</p>
         </div>
     `;
 }
 
-function cancelBookingConfirm(bookingId) {
-    if (typeof telegramApp !== 'undefined' && telegramApp.tg) {
-        telegramApp.showConfirm('Вы уверены, что хотите отменить запись?', (confirmed) => {
-            if (confirmed) {
-                cancelBookingAction(bookingId);
-            }
-        });
-    } else {
-        if (confirm('Вы уверены, что хотите отменить запись?')) {
-            cancelBookingAction(bookingId);
-        }
-    }
-}
-
-function cancelBookingAction(bookingId) {
-    const success = bookingManager.cancelBooking(bookingId);
-
-    if (success) {
-        if (typeof telegramApp !== 'undefined') {
-            telegramApp.hapticFeedback('warning');
-        }
-        updateBookingsBadge();
-        renderMyBookings();
-    }
-}
-
-function rebookService(serviceId) {
-    showMasters(serviceId);
-}
-
 // ===================================
-// БЕЙДЖ ЗАПИСЕЙ
+// МОИ ЗАКАЗЫ
 // ===================================
 
-function updateBookingsBadge() {
-    const badge = document.getElementById('bookingsBadge');
-    const count = bookingManager.getUpcomingCount();
+function renderMyOrders() {
+    // В реальном приложении здесь будет загрузка заказов из localStorage или API
+    const container = document.getElementById('ordersList');
+    if (!container) return;
 
-    if (badge) {
-        if (count > 0) {
-            badge.textContent = count;
-            badge.style.display = 'flex';
-        } else {
-            badge.style.display = 'none';
-        }
-    }
+    // Для демонстрации покажем заглушку
+    container.innerHTML = `
+        <div class="empty-orders">
+            <div class="empty-orders-icon">📦</div>
+            <h3>Заказов пока нет</h3>
+            <p>После оформления заказа он появится здесь</p>
+            <button class="btn-secondary" onclick="showProducts()">Сделать заказ</button>
+        </div>
+    `;
 }
 
 // ===================================
@@ -815,7 +662,7 @@ function initPhoneMask() {
         if ([46, 8, 9, 27, 13].indexOf(e.keyCode) !== -1 ||
             // Разрешить: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
             (e.keyCode === 65 && e.ctrlKey === true) ||
-            (e.keyCode === 67 && e.ctrlKey === true) ||
+            (e.keyCode === 6C && e.ctrlKey === true) ||
             (e.keyCode === 86 && e.ctrlKey === true) ||
             (e.keyCode === 88 && e.ctrlKey === true) ||
             // Разрешить: home, end, left, right
