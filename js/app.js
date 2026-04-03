@@ -662,7 +662,7 @@ function initPhoneMask() {
         if ([46, 8, 9, 27, 13].indexOf(e.keyCode) !== -1 ||
             // Разрешить: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
             (e.keyCode === 65 && e.ctrlKey === true) ||
-            (e.keyCode === 6C && e.ctrlKey === true) ||
+            (e.keyCode === 67 && e.ctrlKey === true) ||
             (e.keyCode === 86 && e.ctrlKey === true) ||
             (e.keyCode === 88 && e.ctrlKey === true) ||
             // Разрешить: home, end, left, right
