@@ -58,7 +58,7 @@ const CONFIG = {
             price: 290,
             category: 'classic',
             description: 'Прочный металлический брелок классического дизайна',
-            image: 'https://images.unsplash.com/photo-1600494611141-e18bfb432de1?w=400&q=80',
+            emoji: '⚙️',
             stock: 100,
             rating: 4.8
         },
@@ -68,7 +68,7 @@ const CONFIG = {
             price: 450,
             category: 'classic',
             description: 'Элегантный кожаный брелок с металлической фурнитурой',
-            image: 'https://images.unsplash.com/photo-1591561954551-53e0e65134e3?w=400&q=80',
+            emoji: '👜',
             stock: 75,
             rating: 4.7
         },
@@ -78,7 +78,7 @@ const CONFIG = {
             price: 390,
             category: 'classic',
             description: 'Натуральный деревянный брелок ручной работы',
-            image: 'https://images.unsplash.com/photo-1600857062241-98c0a9ed8f6d?w=400&q=80',
+            emoji: '🌿',
             stock: 50,
             rating: 4.9
         },
@@ -90,7 +90,7 @@ const CONFIG = {
             price: 690,
             category: 'custom',
             description: 'Брелок с персональной гравировкой по вашему тексту',
-            image: 'https://images.unsplash.com/photo-1600494611141-e18bfb432de1?w=400&q=80',
+            emoji: '✍️',
             stock: 30,
             rating: 4.9
         },
@@ -100,7 +100,7 @@ const CONFIG = {
             price: 890,
             category: 'custom',
             description: 'Брелок с нанесением вашей фотографии',
-            image: 'https://images.unsplash.com/photo-1547981609-4b6bf2bc2a60?w=400&q=80',
+            emoji: '📸',
             stock: 25,
             rating: 4.8
         },
@@ -110,7 +110,7 @@ const CONFIG = {
             price: 790,
             category: 'custom',
             description: 'Корпоративный брелок с вашим логотипом',
-            image: 'https://images.unsplash.com/photo-1585155770447-2f66e2a397b5?w=400&q=80',
+            emoji: '🏷️',
             stock: 40,
             rating: 4.7
         },
@@ -122,7 +122,7 @@ const CONFIG = {
             price: 190,
             category: 'promo',
             description: 'Бюджетный рекламный брелок для массовых рассылок',
-            image: 'https://images.unsplash.com/photo-1600494611141-e18bfb432de1?w=400&q=80',
+            emoji: '📢',
             stock: 200,
             rating: 4.5
         },
@@ -132,7 +132,7 @@ const CONFIG = {
             price: 350,
             category: 'promo',
             description: 'Рекламный брелок среднего качества с логотипом',
-            image: 'https://images.unsplash.com/photo-1591561954551-53e0e65134e3?w=400&q=80',
+            emoji: '📣',
             stock: 150,
             rating: 4.6
         },
@@ -142,7 +142,7 @@ const CONFIG = {
             price: 590,
             category: 'promo',
             description: 'Премиум рекламный брелок с качественной печатью',
-            image: 'https://images.unsplash.com/photo-1600857062241-98c0a9ed8f6d?w=400&q=80',
+            emoji: '⭐',
             stock: 100,
             rating: 4.8
         },
@@ -154,7 +154,7 @@ const CONFIG = {
             price: 490,
             category: 'seasonal',
             description: 'Праздничный новогодний брелок ограниченной серии',
-            image: 'https://images.unsplash.com/photo-1600494611141-e18bfb432de1?w=400&q=80',
+            emoji: '🎄',
             stock: 60,
             rating: 4.9
         },
@@ -164,7 +164,7 @@ const CONFIG = {
             price: 550,
             category: 'seasonal',
             description: 'Романтичный брелок ко Дню святого Валентина',
-            image: 'https://images.unsplash.com/photo-1547981609-4b6bf2bc2a60?w=400&q=80',
+            emoji: '❤️',
             stock: 45,
             rating: 4.7
         },
@@ -174,7 +174,7 @@ const CONFIG = {
             price: 650,
             category: 'seasonal',
             description: 'Трогательный брелок ко Дню матери',
-            image: 'https://images.unsplash.com/photo-1585155770447-2f66e2a397b5?w=400&q=80',
+            emoji: '💐',
             stock: 35,
             rating: 4.9
         },
@@ -186,7 +186,7 @@ const CONFIG = {
             price: 2990,
             category: 'premium',
             description: 'Премиум брелок из золота с инкрустацией',
-            image: 'https://images.unsplash.com/photo-1600494611141-e18bfb432de1?w=400&q=80',
+            emoji: '🥇',
             stock: 10,
             rating: 5.0
         },
@@ -196,7 +196,7 @@ const CONFIG = {
             price: 1990,
             category: 'premium',
             description: 'Эксклюзивный серебряный брелок ручной работы',
-            image: 'https://images.unsplash.com/photo-1591561954551-53e0e65134e3?w=400&q=80',
+            emoji: '🥈',
             stock: 15,
             rating: 4.9
         },
@@ -206,7 +206,7 @@ const CONFIG = {
             price: 9990,
             category: 'premium',
             description: 'Эксклюзивный брелок с бриллиантовой огранкой',
-            image: 'https://images.unsplash.com/photo-1600857062241-98c0a9ed8f6d?w=400&q=80',
+            emoji: '💎',
             stock: 5,
             rating: 5.0
         }

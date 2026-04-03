@@ -145,9 +145,7 @@ function renderProducts() {
 
     container.innerHTML = products.map(product => `
         <div class="product-card" onclick="showProduct('${product.id}')">
-            <div class="product-card-image">
-                <img src="${product.image}" alt="${product.name}" loading="lazy">
-            </div>
+            <div class="product-card-emoji">${product.emoji || '🔑'}</div>
             <div class="product-card-body">
                 <div class="product-card-name">${product.name}</div>
                 <div class="product-card-price">${CONFIG.formatPrice(product.price)}</div>
@@ -166,15 +164,13 @@ function renderProductDetails(product) {
     if (!container || !product) return;
 
     container.innerHTML = `
-        <div class="product-detail-image">
-            <img src="${product.image}" alt="${product.name}">
-        </div>
+        <div class="product-detail-emoji">${product.emoji || '🔑'}</div>
         <div class="product-detail-info">
             <h2>${product.name}</h2>
             <div class="product-detail-price">${CONFIG.formatPrice(product.price)}</div>
             <div class="product-detail-rating">${CONFIG.formatRating(product.rating)}</div>
             <p class="product-detail-description">${product.description}</p>
-            
+
             <div class="product-detail-actions">
                 <button class="btn-primary" onclick="addToCart('${product.id}', 1)">
                     <span>Добавить в корзину</span>
@@ -281,7 +277,7 @@ function renderCart() {
 
     container.innerHTML = cart.map(item => `
         <div class="cart-item">
-            <img src="${item.product.image}" alt="${item.product.name}" class="cart-item-image">
+            <div class="cart-item-emoji">${item.product.emoji || '🔑'}</div>
             <div class="cart-item-info">
                 <div class="cart-item-name">${item.product.name}</div>
                 <div class="cart-item-price">${CONFIG.formatPrice(item.product.price)}</div>
