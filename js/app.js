@@ -490,9 +490,15 @@ function normalizePhone(phone) {
 }
 
 async function sendOrderToServer(order) {
-    // Получаем LeadTeX internal ID из startapp параметра (передаётся ботом через ссылку)
+    // Получаем LeadTeX internal ID из startapp параметра
+    // Источники (по приоритету):
+    // 1. MAX SDK: window.WebApp.initDataUnsafe.start_param
+    // 2. Telegram SDK: window.Telegram.WebApp.initDataUnsafe.start_param
+    // 3. URL query string: ?startapp=12345 (когда MAX передаёт через URL)
+    const urlStartParam = new URLSearchParams(window.location.search).get('startapp');
     const startParam = window.WebApp?.initDataUnsafe?.start_param
                     || window.Telegram?.WebApp?.initDataUnsafe?.start_param
+                    || (urlStartParam && urlStartParam !== '{{id}}' ? urlStartParam : null)
                     || null;
 
     // Получаем telegram_id для переменных
