@@ -542,13 +542,27 @@ body {
 }
 
 .cart-total {
+    margin-bottom: 14px;
+}
+
+.cart-subtotal,
+.cart-delivery {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+}
+
+.cart-grand-total {
+    display: flex;
+    justify-content: space-between;
     font-size: 17px;
     font-weight: 700;
     color: var(--text-primary);
-    margin-bottom: 14px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border-color);
+    margin-top: 4px;
 }
 
 /* ===================================
@@ -1096,12 +1110,21 @@ body {
     white-space: nowrap;
 }
 
+.checkout-delivery {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+    color: var(--text-secondary);
+    padding-top: 8px;
+    border-top: 1px solid var(--border-color);
+    margin-top: 4px;
+}
+
 .checkout-total {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding-top: 12px;
-    border-top: 2px solid var(--border-color);
+    padding-top: 8px;
     font-size: 17px;
     font-weight: 700;
     color: var(--text-primary);

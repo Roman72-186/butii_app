@@ -304,7 +304,13 @@ function renderCart() {
         </div>
     `).join('');
 
-    totalElement.textContent = CONFIG.formatPrice(getCartTotal());
+    const subtotal = getCartTotal();
+    const delivery = CONFIG.CATALOG.deliveryCost;
+    totalElement.innerHTML = `
+        <div class="cart-subtotal"><span>Товары:</span><span>${CONFIG.formatPrice(subtotal)}</span></div>
+        <div class="cart-delivery"><span>Доставка:</span><span>${CONFIG.formatPrice(delivery)}</span></div>
+        <div class="cart-grand-total"><span>Итого:</span><span>${CONFIG.formatPrice(subtotal + delivery)}</span></div>
+    `;
     document.getElementById('checkoutBtn').style.display = 'block';
 }
 
@@ -328,9 +334,13 @@ function renderCheckout() {
                     </div>
                 `).join('')}
             </div>
+            <div class="checkout-delivery">
+                <span>Доставка:</span>
+                <span>${CONFIG.formatPrice(CONFIG.CATALOG.deliveryCost)}</span>
+            </div>
             <div class="checkout-total">
                 <span>Итого:</span>
-                <span id="checkoutTotal">${CONFIG.formatPrice(getCartTotal())}</span>
+                <span id="checkoutTotal">${CONFIG.formatPrice(getCartTotal() + CONFIG.CATALOG.deliveryCost)}</span>
             </div>
         </div>
 
@@ -377,7 +387,7 @@ function renderCheckout() {
 
             <button type="submit" class="btn-primary" id="placeOrderBtn">
                 <span>Оформить заказ</span>
-                <span id="orderTotal">${CONFIG.formatPrice(getCartTotal())}</span>
+                <span id="orderTotal">${CONFIG.formatPrice(getCartTotal() + CONFIG.CATALOG.deliveryCost)}</span>
             </button>
         </form>
     `;
@@ -403,6 +413,9 @@ function renderCheckout() {
 
 async function submitOrder(event) {
     event.preventDefault();
+
+    const placeOrderBtn = document.getElementById('placeOrderBtn');
+    if (placeOrderBtn.disabled) return;
 
     const nameInput = document.getElementById('customerName');
     const phoneInput = document.getElementById('customerPhone');
@@ -442,7 +455,7 @@ async function submitOrder(event) {
             quantity: item.quantity,
             total: item.product.price * item.quantity
         })),
-        total: getCartTotal(),
+        total: getCartTotal() + CONFIG.CATALOG.deliveryCost,
         customer: {
             name: nameInput.value.trim(),
             phone: phoneInput.value.trim(),
@@ -457,9 +470,12 @@ async function submitOrder(event) {
     };
 
     // Отправить на сервер (webhook)
+    placeOrderBtn.disabled = true;
+    placeOrderBtn.style.opacity = '0.6';
+
     try {
         await sendOrderToServer(order);
-        
+
         // Очистить корзину
         cart = [];
         updateCartBadge();
@@ -479,6 +495,8 @@ async function submitOrder(event) {
         if (typeof telegramApp !== 'undefined') {
             telegramApp.hapticFeedback('error');
         }
+        placeOrderBtn.disabled = false;
+        placeOrderBtn.style.opacity = '';
     }
 }
 
