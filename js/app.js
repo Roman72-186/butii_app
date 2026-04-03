@@ -510,7 +510,7 @@ async function sendOrderToServer(order) {
 
     // Подготовка данных для LEADTEX в соответствии с документацией
     const leadtexPayload = {
-        contact_by: 'id',
+        contact_by: 'telegram_id',
         search: telegramId,
         variables: {
             order_id: order.id,
