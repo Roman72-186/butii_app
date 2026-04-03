@@ -96,20 +96,14 @@ class TelegramApp {
     // УВЕДОМЛЕНИЯ
     // -----------------------------------------------
     showAlert(message) {
-        if (this.tg?.showPopup) {
-            this.tg.showPopup({ message });
-        } else if (this.tg?.showAlert) {
-            this.tg.showAlert(message);
-        } else {
-            alert(message);
-        }
+        console.log('Alert:', message);
     }
 
     showConfirm(message, callback) {
         if (this.tg?.showConfirm) {
             this.tg.showConfirm(message, callback);
         } else {
-            callback(confirm(message));
+            callback(true);
         }
     }
 
@@ -189,8 +183,8 @@ class TelegramApp {
             ready:          () => console.log('Mock: ready'),
             expand:         () => console.log('Mock: expand'),
             close:          () => console.log('Mock: close'),
-            showAlert:      (msg) => alert(msg),
-            showPopup:      ({ message }) => alert(message),
+            showAlert:      (msg) => console.log('Mock alert:', msg),
+            showPopup:      ({ message }) => console.log('Mock popup:', message),
             showConfirm:    (msg, cb) => cb(confirm(msg)),
             sendData:       (d) => console.log('Mock: sendData', d),
             requestContact: () => console.log('Mock: requestContact'),

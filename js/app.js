@@ -218,7 +218,6 @@ function addToCart(productId, quantity = 1) {
     
     if (typeof telegramApp !== 'undefined') {
         telegramApp.hapticFeedback('success');
-        telegramApp.showAlert(`Товар добавлен в корзину!`);
     }
 }
 
@@ -414,25 +413,21 @@ async function submitOrder(event) {
 
     // Валидация
     if (!nameInput.value.trim()) {
-        alert('Пожалуйста, введите имя');
         nameInput.focus();
         return;
     }
 
     if (!phoneInput.value.trim() || phoneInput.value.replace(/\D/g, '').length < 11) {
-        alert('Пожалуйста, введите корректный номер телефона');
         phoneInput.focus();
         return;
     }
 
     if (!cityInput.value.trim()) {
-        alert('Пожалуйста, введите город доставки');
         cityInput.focus();
         return;
     }
 
     if (!addressInput.value.trim()) {
-        alert('Пожалуйста, введите адрес доставки');
         addressInput.focus();
         return;
     }
@@ -481,7 +476,9 @@ async function submitOrder(event) {
         document.getElementById('orderForm').reset();
     } catch (e) {
         console.error('Failed to send order to server:', e);
-        alert('Ошибка при отправке заказа. Попробуйте ещё раз.');
+        if (typeof telegramApp !== 'undefined') {
+            telegramApp.hapticFeedback('error');
+        }
     }
 }
 
