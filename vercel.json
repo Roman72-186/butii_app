@@ -1,6 +1,12 @@
 {
   "version": 2,
   "outputDirectory": ".",
+  "rewrites": [
+    {
+      "source": "/api/webhook",
+      "destination": "https://rb786743.leadteh.ru/inner_webhook/ed15c46a-5b2b-44fb-82b1-283059365c41"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",
