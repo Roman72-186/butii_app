@@ -334,6 +334,7 @@ function renderCheckout() {
                 <div class="form-group">
                     <label for="customerPhone">Телефон *</label>
                     <input type="tel" id="customerPhone" required placeholder="+7 (___) ___-__-__">
+                    ${telegramApp.isMAX ? `<button type="button" class="btn-contact-request" onclick="requestPhoneFromMAX()">📱 Получить из MAX</button>` : ''}
                 </div>
 
                 <div class="form-group">
@@ -606,6 +607,26 @@ function renderMyOrders() {
             <button class="btn-secondary" onclick="showProducts()">Сделать заказ</button>
         </div>
     `;
+}
+
+// ===================================
+// ЗАПРОС ТЕЛЕФОНА ИЗ MAX
+// ===================================
+
+function requestPhoneFromMAX() {
+    if (typeof telegramApp === 'undefined') return;
+
+    telegramApp.requestContact((phone) => {
+        if (!phone) return;
+
+        const input = document.getElementById('customerPhone');
+        if (!input) return;
+
+        input.value = phone;
+        // Применяем маску форматирования
+        input.dispatchEvent(new Event('input'));
+        telegramApp.hapticFeedback('success');
+    });
 }
 
 // ===================================

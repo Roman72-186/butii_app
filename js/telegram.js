@@ -1,101 +1,105 @@
 // ===================================
-// TELEGRAM WEB APP API
+// MAX WEB APP SDK (+ Telegram fallback)
 // ===================================
+// Приоритет: window.WebApp (MAX) → window.Telegram.WebApp (Telegram) → mock
 
 class TelegramApp {
     constructor() {
-        this.tg = window.Telegram?.WebApp;
+        // MAX SDK определяет window.WebApp
+        // Telegram SDK определяет window.Telegram.WebApp
+        this.isMAX = !!window.WebApp;
+        this.tg = window.WebApp || window.Telegram?.WebApp || null;
         this.user = null;
         this.init();
     }
 
     init() {
         if (this.tg) {
-            // Реальное окружение Telegram
             this.tg.ready();
-            this.tg.expand();
-            this.user = this.tg.initDataUnsafe?.user;
-            
-            // Сохраняем telegram_id в localStorage для дальнейшего использования
-            if (this.user && this.user.id) {
-                localStorage.setItem('telegram_id', this.user.id.toString());
-                console.log('📱 Telegram ID сохранен в localStorage:', this.user.id);
-                console.log('🆔 Telegram ID:', this.user?.id);
+
+            // expand() есть в Telegram, в MAX может отсутствовать
+            if (typeof this.tg.expand === 'function') {
+                this.tg.expand();
             }
-            
-            // Настройка темы
+
+            this.user = this.tg.initDataUnsafe?.user || null;
+
+            if (this.user?.id) {
+                localStorage.setItem('telegram_id', this.user.id.toString());
+                console.log(`📱 ${this.isMAX ? 'MAX' : 'Telegram'} user:`, this.user.id);
+            }
+
             this.setupTheme();
-            
-            // Настройка кнопок
             this.setupButtons();
-            
-            console.log('📱 Telegram Web App инициализирован');
-            console.log('👤 Пользователь:', this.user);
+
+            console.log(`✅ ${this.isMAX ? 'MAX' : 'Telegram'} WebApp инициализирован`);
         } else if (CONFIG.DEV_MODE) {
-            // Режим разработки - используем mock данные
-            console.log('🔧 Режим разработки активирован');
+            console.log('🔧 DEV_MODE активирован');
             this.user = CONFIG.MOCK_USER;
-            this.tg = this.createMockTelegram();
+            this.tg = this._createMock();
         } else {
-            console.warn('⚠️ Telegram Web App API недоступен');
+            console.warn('⚠️ WebApp API недоступен — используется mock');
             this.user = CONFIG.MOCK_USER;
-            this.tg = this.createMockTelegram();
+            this.tg = this._createMock();
         }
     }
 
     setupTheme() {
         if (!this.tg) return;
-        
+
         const theme = this.tg.colorScheme || 'light';
         document.body.setAttribute('data-theme', theme);
-        
-        // Установка цветов из темы Telegram
-        if (this.tg.themeParams) {
+
+        const params = this.tg.themeParams;
+        if (params) {
             const root = document.documentElement;
-            if (this.tg.themeParams.bg_color) {
-                root.style.setProperty('--tg-bg-color', this.tg.themeParams.bg_color);
-            }
-            if (this.tg.themeParams.text_color) {
-                root.style.setProperty('--tg-text-color', this.tg.themeParams.text_color);
-            }
-            if (this.tg.themeParams.button_color) {
-                root.style.setProperty('--tg-button-color', this.tg.themeParams.button_color);
-            }
+            if (params.bg_color)     root.style.setProperty('--tg-bg-color',     params.bg_color);
+            if (params.text_color)   root.style.setProperty('--tg-text-color',   params.text_color);
+            if (params.button_color) root.style.setProperty('--tg-button-color', params.button_color);
         }
     }
 
     setupButtons() {
-        if (!this.tg?.MainButton) return;
-        
-        // Скрываем главную кнопку по умолчанию
-        this.tg.MainButton.hide();
+        // BackButton — есть и в MAX, и в Telegram
+        if (this.tg?.BackButton) {
+            this.tg.BackButton.hide();
+        }
+
+        // MainButton — только Telegram, в MAX отсутствует
+        if (!this.isMAX && this.tg?.MainButton) {
+            this.tg.MainButton.hide();
+        }
     }
 
-    showMainButton(text, onClick) {
-        if (!this.tg?.MainButton) return;
-        
-        this.tg.MainButton.setText(text);
-        this.tg.MainButton.show();
-        this.tg.MainButton.onClick(onClick);
+    // -----------------------------------------------
+    // ЗАПРОС ТЕЛЕФОНА (нативный диалог MAX)
+    // callback(phone: string | null)
+    // -----------------------------------------------
+    requestContact(callback) {
+        if (this.isMAX && typeof this.tg?.requestContact === 'function') {
+            // Подписываемся на ответ один раз
+            const handler = (data) => {
+                this.tg.offEvent('contactRequested', handler);
+                const phone = data?.contact?.phone_number || null;
+                callback(phone);
+            };
+            this.tg.onEvent('contactRequested', handler);
+            this.tg.requestContact();
+        } else {
+            // Telegram или mock — нативного диалога нет
+            callback(null);
+        }
     }
 
-    hideMainButton() {
-        if (!this.tg?.MainButton) return;
-        
-        this.tg.MainButton.hide();
-        this.tg.MainButton.offClick(() => {});
-    }
-
+    // -----------------------------------------------
+    // УВЕДОМЛЕНИЯ
+    // -----------------------------------------------
     showAlert(message) {
-        // Проверяем доступность методов в порядке приоритета
         if (this.tg?.showPopup) {
-            this.tg.showPopup({
-                message: message
-            });
+            this.tg.showPopup({ message });
         } else if (this.tg?.showAlert) {
             this.tg.showAlert(message);
         } else {
-            // Fallback на стандартный alert
             alert(message);
         }
     }
@@ -104,77 +108,46 @@ class TelegramApp {
         if (this.tg?.showConfirm) {
             this.tg.showConfirm(message, callback);
         } else {
-            const result = confirm(message);
-            callback(result);
+            callback(confirm(message));
         }
     }
 
-    hapticFeedback(type = 'impact') {
-        if (!this.tg?.HapticFeedback) return;
-        
+    // -----------------------------------------------
+    // HAPTIC FEEDBACK (одинаковый API в MAX и Telegram)
+    // -----------------------------------------------
+    hapticFeedback(type = 'medium') {
+        const hf = this.tg?.HapticFeedback;
+        if (!hf) return;
+
         switch (type) {
-            case 'light':
-                this.tg.HapticFeedback.impactOccurred('light');
-                break;
-            case 'medium':
-                this.tg.HapticFeedback.impactOccurred('medium');
-                break;
-            case 'heavy':
-                this.tg.HapticFeedback.impactOccurred('heavy');
-                break;
-            case 'success':
-                this.tg.HapticFeedback.notificationOccurred('success');
-                break;
-            case 'warning':
-                this.tg.HapticFeedback.notificationOccurred('warning');
-                break;
-            case 'error':
-                this.tg.HapticFeedback.notificationOccurred('error');
-                break;
-            default:
-                this.tg.HapticFeedback.impactOccurred('medium');
+            case 'light':   hf.impactOccurred('light');           break;
+            case 'medium':  hf.impactOccurred('medium');          break;
+            case 'heavy':   hf.impactOccurred('heavy');           break;
+            case 'success': hf.notificationOccurred('success');   break;
+            case 'warning': hf.notificationOccurred('warning');   break;
+            case 'error':   hf.notificationOccurred('error');     break;
+            default:        hf.impactOccurred('medium');
         }
     }
 
+    // -----------------------------------------------
+    // УПРАВЛЕНИЕ ПРИЛОЖЕНИЕМ
+    // -----------------------------------------------
     close() {
-        if (this.tg?.close) {
+        if (typeof this.tg?.close === 'function') {
             this.tg.close();
-        } else {
-            console.log('Mock: Закрытие приложения');
         }
     }
 
     sendData(data) {
-        if (this.tg?.sendData) {
+        if (typeof this.tg?.sendData === 'function') {
             this.tg.sendData(JSON.stringify(data));
-        } else {
-            console.log('Mock: Отправка данных боту:', data);
         }
     }
 
-    createMockTelegram() {
-        return {
-            ready: () => console.log('Mock: ready'),
-            expand: () => console.log('Mock: expand'),
-            close: () => console.log('Mock: close'),
-            showAlert: (msg) => alert(msg),
-            showConfirm: (msg, cb) => cb(confirm(msg)),
-            sendData: (data) => console.log('Mock: sendData', data),
-            MainButton: {
-                setText: (text) => console.log('Mock: MainButton.setText', text),
-                show: () => console.log('Mock: MainButton.show'),
-                hide: () => console.log('Mock: MainButton.hide'),
-                onClick: (cb) => console.log('Mock: MainButton.onClick'),
-                offClick: (cb) => console.log('Mock: MainButton.offClick')
-            },
-            HapticFeedback: {
-                impactOccurred: (style) => console.log('Mock: Haptic', style),
-                notificationOccurred: (type) => console.log('Mock: Notification', type),
-                selectionChanged: () => console.log('Mock: Selection changed')
-            }
-        };
-    }
-
+    // -----------------------------------------------
+    // ДАННЫЕ ПОЛЬЗОВАТЕЛЯ
+    // -----------------------------------------------
     getUser() {
         return this.user;
     }
@@ -184,10 +157,39 @@ class TelegramApp {
     }
 
     getUserName() {
-        const user = this.user || CONFIG.MOCK_USER;
-        return user.first_name + (user.last_name ? ' ' + user.last_name : '');
+        const u = this.user || CONFIG.MOCK_USER;
+        return u.first_name + (u.last_name ? ' ' + u.last_name : '');
+    }
+
+    // -----------------------------------------------
+    // MOCK (dev / вне мессенджера)
+    // -----------------------------------------------
+    _createMock() {
+        return {
+            ready:          () => console.log('Mock: ready'),
+            expand:         () => console.log('Mock: expand'),
+            close:          () => console.log('Mock: close'),
+            showAlert:      (msg) => alert(msg),
+            showPopup:      ({ message }) => alert(message),
+            showConfirm:    (msg, cb) => cb(confirm(msg)),
+            sendData:       (d) => console.log('Mock: sendData', d),
+            requestContact: () => console.log('Mock: requestContact'),
+            onEvent:        (ev, cb) => console.log('Mock: onEvent', ev),
+            offEvent:       (ev, cb) => console.log('Mock: offEvent', ev),
+            BackButton: {
+                show:     () => {},
+                hide:     () => {},
+                onClick:  () => {},
+                offClick: () => {}
+            },
+            HapticFeedback: {
+                impactOccurred:      (s) => console.log('Mock: impact', s),
+                notificationOccurred:(t) => console.log('Mock: notify', t),
+                selectionChanged:    ()  => console.log('Mock: selection')
+            }
+        };
     }
 }
 
-// Создаем глобальный экземпляр
+// Глобальный экземпляр
 const telegramApp = new TelegramApp();

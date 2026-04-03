@@ -1217,3 +1217,29 @@ body {
     font-size: 14px;
     margin-bottom: 20px;
 }
+
+/* ===================================
+   MAX REQUEST CONTACT BUTTON
+   =================================== */
+
+.btn-contact-request {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    padding: 8px 14px;
+    background: var(--primary-light);
+    color: var(--primary);
+    border: 1.5px solid var(--primary);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-contact-request:active {
+    background: var(--primary);
+    color: white;
+    transform: scale(0.97);
+}
