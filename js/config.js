@@ -20,7 +20,8 @@ const CONFIG = {
         currency: '₽',
         currencyCode: 'RUB',
         phone: '+7 (999) 123-45-67',
-        address: 'г. Москва, ул. Брелковая, д. 1'
+        address: 'г. Москва, ул. Брелковая, д. 1',
+        maxBotUsername: 'id861708697380_1_bot'
     },
 
     // ===================================

@@ -1222,6 +1222,25 @@ body {
    MAX REQUEST CONTACT BUTTON
    =================================== */
 
+.btn-share {
+    width: 100%;
+    padding: 14px 20px;
+    background: #25D366;
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: var(--transition);
+    margin-bottom: 10px;
+}
+
+.btn-share:active {
+    transform: translateY(2px);
+    opacity: 0.85;
+}
+
 .btn-contact-request {
     display: inline-flex;
     align-items: center;

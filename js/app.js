@@ -91,6 +91,19 @@ function showCheckout() {
 function showSuccess(order) {
     renderSuccessDetails(order);
     showSection('successSection');
+
+    // Показать кнопку шеринга только в MAX
+    const shareBtn = document.getElementById('shareBtn');
+    if (shareBtn) {
+        shareBtn.style.display = (typeof telegramApp !== 'undefined' && telegramApp.isMAX) ? 'block' : 'none';
+    }
+}
+
+function shareApp() {
+    if (typeof telegramApp !== 'undefined') {
+        telegramApp.hapticFeedback('light');
+        telegramApp.shareApp();
+    }
 }
 
 function showMyOrders() {

@@ -146,6 +146,25 @@ class TelegramApp {
     }
 
     // -----------------------------------------------
+    // ШЕРИНГ (MAX: shareMaxContent / нативный: shareContent)
+    // -----------------------------------------------
+    shareApp() {
+        const text = CONFIG.SHOP.name + ' — магазин брелков';
+        const link = 'https://max.ru/' + CONFIG.SHOP.maxBotUsername;
+
+        if (this.isMAX && typeof this.tg?.shareMaxContent === 'function') {
+            // Шеринг внутри MAX (в чаты пользователя)
+            this.tg.shareMaxContent({ text, link });
+        } else if (typeof this.tg?.shareContent === 'function') {
+            // Нативный системный шеринг (Telegram / другие платформы)
+            this.tg.shareContent({ text, link });
+        } else if (navigator.share) {
+            // Web Share API fallback
+            navigator.share({ title: CONFIG.SHOP.name, text, url: link });
+        }
+    }
+
+    // -----------------------------------------------
     // ДАННЫЕ ПОЛЬЗОВАТЕЛЯ
     // -----------------------------------------------
     getUser() {
