@@ -393,7 +393,7 @@ describe('App', () => {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    contact_by: 'id',
+                    contact_by: 'max_id',
                     search: orderData.telegram.userId.toString(),
                     variables: {
                         order_id: orderData.order.orderId,
@@ -456,7 +456,7 @@ describe('App', () => {
             await sendToLeadtex(testOrderData);
 
             const callBody = JSON.parse(fetch.mock.calls[0][1].body);
-            expect(callBody.contact_by).toBe('id');
+            expect(callBody.contact_by).toBe('max_id');
             expect(callBody.search).toBe('123456789');
         });
 
