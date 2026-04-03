@@ -525,7 +525,7 @@ async function sendOrderToServer(order) {
             order_id: order.id,
             order_total: order.total.toString(),
             order_subtotal: order.total.toString(),
-            order_delivery: "300", // пример стоимости доставки
+            order_delivery: CONFIG.CATALOG.deliveryCost.toString(),
             order_items_count: order.items.length.toString(),
             order_timestamp: order.timestamp,
 
@@ -616,13 +616,12 @@ function renderMyOrders() {
     const container = document.getElementById('ordersList');
     if (!container) return;
 
-    // Для демонстрации покажем заглушку
     container.innerHTML = `
         <div class="empty-orders">
-            <div class="empty-orders-icon">📦</div>
-            <h3>Заказов пока нет</h3>
-            <p>После оформления заказа он появится здесь</p>
-            <button class="btn-secondary" onclick="showProducts()">Сделать заказ</button>
+            <div class="empty-orders-icon">🚧</div>
+            <h3>Раздел в разработке</h3>
+            <p>История заказов появится в следующей версии</p>
+            <button class="btn-secondary" onclick="showProducts()">Вернуться в каталог</button>
         </div>
     `;
 }

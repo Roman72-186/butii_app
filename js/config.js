@@ -31,7 +31,8 @@ const CONFIG = {
     CATALOG: {
         itemsPerPage: 12,
         maxCartItems: 50,
-        allowPreOrder: true
+        allowPreOrder: true,
+        deliveryCost: 300
     },
 
     // ===================================
