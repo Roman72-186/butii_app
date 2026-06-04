@@ -1,4 +1,4 @@
----
+﻿---
 tags: [atlas, deploy, vercel, ci]
 date: 2026-04-02
 ---
@@ -26,7 +26,7 @@ vercel --prod
   "rewrites": [
     {
       "source": "/api/webhook",
-      "destination": "https://rb786743.leadteh.ru/inner_webhook/1f829cc9-..."
+      "destination": "https://rb786743.CRM.ru/inner_webhook/1f829cc9-..."
     }
   ],
   "headers": [
@@ -42,7 +42,7 @@ vercel --prod
 }
 ```
 
-> **Важно**: URL LEADTEX захардкожен в двух местах — `vercel.json` и `api/webhook.js`. При смене UUID вебхука нужно обновить оба файла.
+> **Важно**: URL External CRM захардкожен в двух местах — `vercel.json` и `api/webhook.js`. При смене UUID вебхука нужно обновить оба файла.
 
 ## Vercel Rewrite vs Serverless Function
 
@@ -51,7 +51,7 @@ vercel --prod
 - `vercel.json → rewrites` — простое перенаправление URL, не выполняет код
 - `api/webhook.js` — serverless функция, выполняет fetch с кастомными заголовками
 
-Сейчас оба нацелены на один URL LEADTEX. `api/webhook.js` добавляет обработку ошибок и логирование — это актуальный путь. Rewrite в `vercel.json` — возможно артефакт предыдущей версии.
+Сейчас оба нацелены на один URL External CRM. `api/webhook.js` добавляет обработку ошибок и логирование — это актуальный путь. Rewrite в `vercel.json` — возможно артефакт предыдущей версии.
 
 ## Переменные окружения
 
@@ -59,9 +59,9 @@ vercel --prod
 
 Bridge-компонент требует:
 ```
-LEADTEH_WEBHOOK_URL=https://...
-LEADTEH_API_KEY=...
-LEADTEH_BOT_ID=...
+CRM_WEBHOOK_URL=https://...
+CRM_API_KEY=...
+CRM_BOT_ID=...
 ```
 Устанавливаются в Vercel Dashboard → Project Settings → Environment Variables.
 
@@ -69,3 +69,4 @@ LEADTEH_BOT_ID=...
 
 - [[архитектура системы построена на трёх уровнях]]
 - [[Bridge решает потерю параметров в Telegram Ads]]
+

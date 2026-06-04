@@ -1,40 +1,39 @@
-// Vercel Serverless Function для проксирования запросов к LEADTEX
-// Это решает проблему CORS
+// Legacy Vercel-compatible CRM proxy.
+// Main production path is Express server.js; this file is kept only to avoid
+// hardcoded CRM URLs if somebody deploys the old Vercel setup by mistake.
 
 export default async function handler(req, res) {
-    // Разрешаем только POST запросы
     if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Method not allowed' });
+        return res.status(405).json({ ok: false, error: 'METHOD_NOT_ALLOWED' });
     }
 
-    // URL вебхука SMS-NJMAX (MAX-мессенджер) в LeadTeX
-    const WEBHOOK_URL = 'https://rb786743.leadteh.ru/inner_webhook/ed15c46a-5b2b-44fb-82b1-283059365c41';
+    const webhookUrl = process.env.CRM_WEBHOOK_URL;
+    if (!webhookUrl) {
+        return res.status(501).json({ ok: false, error: 'CRM_WEBHOOK_URL_NOT_CONFIGURED' });
+    }
+
+    const headers = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+    };
+
+    if (process.env.CRM_WEBHOOK_SECRET) {
+        headers['x-webhook-secret'] = process.env.CRM_WEBHOOK_SECRET;
+    }
 
     try {
-        // Проксируем запрос к LEADTEX
-        const response = await fetch(WEBHOOK_URL, {
+        const response = await fetch(webhookUrl, {
             method: 'POST',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(req.body)
+            headers,
+            body: JSON.stringify(req.body),
         });
-
         const data = await response.text();
-
-        // Возвращаем ответ клиенту
-        return res.status(response.status).json({
-            success: response.ok,
-            status: response.status,
-            data: data
-        });
-
+        return res.status(response.status).json({ ok: response.ok, data });
     } catch (error) {
-        console.error('Proxy error:', error);
         return res.status(500).json({
-            error: 'Failed to send request to LEADTEX',
-            message: error.message
+            ok: false,
+            error: 'CRM_PROXY_FAILED',
+            message: error.message,
         });
     }
 }

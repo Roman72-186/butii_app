@@ -1,13 +1,13 @@
-/**
+﻿/**
  * Telegram Ads Bridge Mini App
  *
  * Captures advertising parameters from Telegram Ads links and forwards them
- * to Leadteh webhook for proper attribution, then closes to land user in bot chat.
+ * to CRM webhook for proper attribution, then closes to land user in bot chat.
  *
  * Flow:
  * 1. Initialize Telegram WebApp SDK
  * 2. Extract start_param and telegram_id from initData
- * 3. POST data to Leadteh webhook
+ * 3. POST data to CRM webhook
  * 4. On success: close Mini App -> user lands in bot chat
  * 5. On error: show retry option
  */
@@ -450,3 +450,4 @@
     }
 
 })();
+

@@ -1,38 +1,42 @@
 {
   "name": "keychain-shop-miniapp",
   "version": "1.0.0",
-  "description": "Telegram Mini App магазин с интеграцией LEADTEX CRM",
-  "main": "index.html",
+  "description": "MAX Burger Mini App shop with YooMoney payments",
+  "main": "server.js",
   "scripts": {
-    "dev": "npx http-server -p 3000 -o",
-    "build": "echo 'No build step required - static site'",
-    "deploy": "vercel --prod",
+    "dev": "node server.js",
+    "start": "node server.js",
+    "build": "echo \"No frontend build step required\"",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage"
   },
   "keywords": [
-    "telegram",
+    "max",
     "mini-app",
-    "shop",
-    "leadtex",
+    "yoomoney",
+    "burger",
     "e-commerce"
   ],
   "author": "",
   "license": "MIT",
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "express": "^4.22.1",
+    "pg": "^8.16.3",
+    "zod": "^4.3.6"
+  },
   "devDependencies": {
-    "http-server": "^14.1.1",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0"
   },
   "jest": {
     "testEnvironment": "jsdom",
     "testMatch": [
-      "**/tests/app.test.js"
+      "**/tests/smoke.test.js"
     ],
     "collectCoverageFrom": [
-      "js/**/*.js",
-      "!js/telegram.js"
+      "js/**/*.js"
     ],
     "coverageDirectory": "coverage",
     "coverageReporters": [

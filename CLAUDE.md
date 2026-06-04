@@ -1,6 +1,26 @@
+﻿> Совместимый вход для Claude Code: перед работой читать [AGENTS.md](AGENTS.md), затем [../AGENTS.md](../AGENTS.md).  
+> Сохранить сессию → C:\Users\User\.agents\skills\save-session\SKILL.md → session-handoffs/current.md.  
+> Прочитай сохранённую сессию → сначала session-handoffs/current.md, затем [AGENTS.md](AGENTS.md).
+
+---
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Общие слои
+
+Этот проект использует общие принципы и активы из корня монорепо `Project/`:
+
+- **Голос и стиль:** [../ai-clone/voice/](../ai-clone/voice/), [../ai-clone/style/](../ai-clone/style/)
+- **Принципы кода:** [../ai-clone/principles/code.md](../ai-clone/principles/code.md)
+- **Принципы продукта:** [../ai-clone/principles/product.md](../ai-clone/principles/product.md)
+- **Уроки и подтверждённые решения:** [../ai-clone/feedback/](../ai-clone/feedback/) — `Why / How to apply`
+- **Совет директоров (методы):** [../mastery/INDEX.md](../mastery/INDEX.md)
+- **Активные планы:** [../plans/](../plans/) — файлы с префиксом `keychain-`
+- **Ретроспективы:** [../retrospectives/](../retrospectives/)
+- **Корневой навигатор:** [../CLAUDE.md](../CLAUDE.md)
+
+---
 
 ## Commands
 
@@ -19,45 +39,36 @@ npx jest tests/cart.test.js
 
 ## Architecture
 
-This is a **Telegram Mini App** (SPA) for selling keychains, deployed on Vercel and integrated with the LEADTEX CRM.
+This is a **MAX Mini App** burger shop for Екатеринбург: burgers, wings, sauces, sides, delivery/pickup, orders, and YooMoney payments.
 
 ### Data flow
 
 ```
-User (Telegram) → index.html → js/app.js → POST /api/webhook → Vercel rewrite → LEADTEX
+User (MAX) → index.html → js/max-app.js → js/app.js → server.js → PostgreSQL/in-memory store → YooMoney/External CRM
 ```
 
-- `js/config.js` — Single source of truth for all shop data (products, categories, prices, WEBHOOK_URL). Modifying products/categories only requires editing this file.
-- `js/telegram.js` — Wraps the Telegram Web App SDK (`window.Telegram.WebApp`). Provides a mock object when `DEV_MODE=true` in config.js so the app runs outside Telegram in a browser.
-- `js/app.js` — Core shopping logic: section-based SPA navigation, cart state (in-memory + localStorage), product rendering, checkout form, and `sendOrderToServer()` which posts to `/api/webhook`.
-- `api/webhook.js` — Vercel serverless function that acts as a CORS proxy, forwarding order payloads to LEADTEX. The actual LEADTEX URL lives in `vercel.json` rewrites.
-- `js/booking.js` — Unused BookingManager class, not wired into the application.
+- `js/config.js` — single source of truth for burger menu data: products, categories, prices, delivery, pickup points, and public shop settings.
+- `js/max-app.js` — wraps the MAX Web App SDK (`window.WebApp`) and provides a browser mock for local development.
+- `js/app.js` — core shop logic: section-based SPA navigation, cart state, product rendering, checkout form, order creation, payment screen, status checks, and order history.
+- `server.js` + `server/` — Express API for auth, catalog validation, orders, YooMoney payment creation/status, and optional External CRM webhook after successful payment.
+- `api/webhook.js` — legacy Vercel webhook bridge; do not use it as the main order flow unless a specific integration task requires it.
 
 ### SPA navigation
 
 `showSection(sectionId)` hides all sections and shows the target one. The six sections are defined in `index.html`: `productsSection`, `productDetailsSection`, `cartSection`, `checkoutSection`, `successSection`, `myOrdersSection`.
 
-### LEADTEX payload format
+### External CRM payload format
 
-Orders are sent as:
-```json
-{
-  "contact_by": "telegram_id",
-  "search": "<user telegram_id>",
-  "variables": { "order details and customer info" }
-}
-```
-
-`telegram_id` is read from `Telegram.WebApp.initDataUnsafe.user.id`. In DEV_MODE, a mock user `{ id: 123456789 }` is used.
+External CRM is optional and receives paid orders from the backend when `CRM_WEBHOOK_URL` is configured. MAX user data comes from `window.WebApp.initDataUnsafe.user`; in local development `CONFIG.MOCK_USER` is used.
 
 ### Bridge component (`bridge/`)
 
-A separate, standalone Telegram Mini App used for ad campaign attribution. It captures `start_param` + `telegram_id` when new users arrive via Telegram Ads (where those params can be lost), forwards them to LEADTEX, then closes immediately. Has its own `vercel.json` and can be deployed independently.
+Legacy attribution bridge. Keep it only if the deployment still uses it for campaign tracking; it is not part of the burger ordering UI.
 
 ## Key configuration
 
-- **Enable dev mode** (run outside Telegram): set `DEV_MODE: true` in `js/config.js`.
-- **Change LEADTEX endpoint**: update the `rewrites` destination in `vercel.json`.
+- **Enable dev mode** (run outside MAX): set `DEV_MODE: true` in `js/config.js`.
+- **Change External CRM endpoint**: set `CRM_WEBHOOK_URL` in environment.
 - **Add/edit products**: edit the `PRODUCTS` array in `js/config.js` — no rebuild required (static site).
 - **Delivery cost / cart limits**: `CONFIG.CATALOG` in `js/config.js`.
 ## Obsidian Knowledge Vault
@@ -69,11 +80,12 @@ A separate, standalone Telegram Mini App used for ad campaign attribution. It ca
 - `obsidian-vault/00-home/текущие приоритеты.md` — активные задачи и известные баги
 
 **Где искать знания:**
-- `obsidian-vault/knowledge/integrations/` — LEADTEX, Telegram SDK, Bridge
+- `obsidian-vault/knowledge/integrations/` — External CRM, Telegram SDK, Bridge
 - `obsidian-vault/knowledge/debugging/` — известные проблемы и их решения
 - `obsidian-vault/knowledge/decisions/` — почему сделано именно так
 - `obsidian-vault/knowledge/patterns/` — архитектурные паттерны кода
 - `obsidian-vault/knowledge/business/` — каталог товаров, структура заказа
 - `obsidian-vault/atlas/` — архитектура, стек, деплой (верхний уровень)
 
-**После завершения задачи** создай заметку в `obsidian-vault/sessions/YYYY-MM-DD название.md` и обнови `текущие приоритеты.md`.
+**После завершения задачи** сначала используй внешний протокол `C:\Users\User\.agents\skills\save-session\SKILL.md` и обнови `session-handoffs/current.md` внутри проекта. Заметку в `obsidian-vault/sessions/YYYY-MM-DD название.md` и `текущие приоритеты.md` можно обновить дополнительно как долговременную память проекта.
+

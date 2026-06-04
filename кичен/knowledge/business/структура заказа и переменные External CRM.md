@@ -1,9 +1,9 @@
----
-tags: [business, order, leadtex, variables]
+﻿---
+tags: [business, order, External CRM, variables]
 date: 2026-04-02
 ---
 
-# Структура заказа и переменные LEADTEX
+# Структура заказа и переменные External CRM
 
 ## Объект заказа внутри приложения
 
@@ -36,7 +36,7 @@ const order = {
 };
 ```
 
-## Payload для LEADTEX
+## Payload для External CRM
 
 `sendOrderToServer()` трансформирует объект заказа в плоский словарь переменных:
 
@@ -70,7 +70,7 @@ const order = {
 }
 ```
 
-LEADTEX ищет контакт по `telegram_id`. Если контакта нет — заказ не обрабатывается.
+External CRM ищет контакт по `telegram_id`. Если контакта нет — заказ не обрабатывается.
 
 ## Маска телефона
 
@@ -82,6 +82,7 @@ LEADTEX ищет контакт по `telegram_id`. Если контакта н
 
 ## Связанные заметки
 
-- [[LEADTEX принимает заказы через inner_webhook]]
+- [[External CRM принимает заказы через inner_webhook]]
 - [[каталог брелков 15 товаров 6 категорий]]
-- [[заказ не отправляется в LEADTEX]]
+- [[заказ не отправляется в External CRM]]
+

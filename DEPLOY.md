@@ -1,270 +1,88 @@
-# 🚀 Пошаговое руководство по деплою
+# Деплой MAX Burger
 
-## Шаг 1: Подготовка проекта
+Инструкция для текущего проекта: MAX Mini App бургерной в Екатеринбурге с Express backend, серверным пересчётом корзины, доставкой/самовывозом и оплатой через ЮMoney.
 
-### 1.1 Обновите конфигурацию
-
-Откройте `js/config.js` и вставьте **ваш URL вебхука** из LEADTEX:
-
-```javascript
-WEBHOOK_URL: 'https://rb786743.leadteh.ru/inner_webhook/1f829cc9-3da3-4485-a97d-350e0d34baa1',
-```
-
-### 1.2 (Опционально) Настройте товар
-
-Измените информацию о товаре в `js/config.js`:
-
-```javascript
-PRODUCT: {
-    id: 'keychain-premium-001',
-    name: 'Брелок Premium Edition',
-    price: 990,
-    oldPrice: 1490,
-    // ...
-}
-```
-
-## Шаг 2: Загрузка на GitHub
-
-### 2.1 Инициализация Git
+## 1. Подготовка
 
 ```bash
-cd keychain-shop
-git init
-git add .
-git commit -m "Initial commit: Keychain Shop Mini App"
+npm install
+cp .env.example .env
 ```
 
-### 2.2 Создание репозитория
+Заполни `.env`:
 
-1. Перейдите на [github.com](https://github.com)
-2. Нажмите "New repository"
-3. Название: `keychain-shop-miniapp`
-4. Описание: "Telegram Mini App для продажи брелков"
-5. Выберите: Public
-6. **НЕ** добавляйте README, .gitignore, license (уже есть)
-7. Нажмите "Create repository"
+```env
+PUBLIC_APP_URL=https://shop.sushi-house-39.online
+PORT=3000
+JWT_SECRET=replace-with-long-random-secret
+DATABASE_URL=
+YOOMONEY_RECEIVER=
+YOOMONEY_NOTIFICATION_SECRET=
+CRM_WEBHOOK_URL=
+CRM_WEBHOOK_SECRET=
+```
 
-### 2.3 Загрузка кода
+`DATABASE_URL` можно оставить пустым для локальной проверки: приложение запустится с in-memory хранилищем.
+
+## 2. Локальная проверка
 
 ```bash
-git remote add origin https://github.com/ваш-username/keychain-shop-miniapp.git
-git branch -M main
-git push -u origin main
+npm run dev
+npm test
 ```
 
-## Шаг 3: Деплой на Vercel
+Открой `http://localhost:3000` и проверь путь:
 
-### Вариант A: Через веб-интерфейс (рекомендуется)
+```text
+меню -> блюдо -> корзина -> доставка/самовывоз -> оплата -> статус заказа
+```
 
-1. Перейдите на [vercel.com](https://vercel.com)
-2. Нажмите **"Sign Up"** (регистрация через GitHub)
-3. После входа нажмите **"Add New..." → "Project"**
-4. Выберите репозиторий `keychain-shop-miniapp`
-5. Настройки оставьте по умолчанию:
-   - Framework Preset: **Other**
-   - Root Directory: `./`
-   - Build Command: (оставить пустым)
-   - Output Directory: (оставить пустым)
-6. Нажмите **"Deploy"**
-7. Дождитесь завершения деплоя (1-2 минуты)
-8. **Скопируйте URL**: `https://your-project.vercel.app`
+## 3. Сервер
 
-### Вариант B: Через Vercel CLI
+Продакшен-домен:
+
+```text
+https://shop.sushi-house-39.online
+```
+
+DNS A-запись должна указывать на VPS:
+
+```text
+shop.sushi-house-39.online -> 72.56.77.253
+```
+
+На сервере приложение должно работать за Nginx reverse proxy на Node-процесс с `PORT=3000`.
+
+## 4. ЮMoney
+
+В кабинете ЮMoney укажи HTTP notification URL:
+
+```text
+https://shop.sushi-house-39.online/api/payments/yoomoney/notification
+```
+
+После подключения проверь, что заказ после оплаты получает статус `paid`.
+
+## 5. MAX
+
+В настройках MAX Mini App укажи URL:
+
+```text
+https://shop.sushi-house-39.online/
+```
+
+Проверь на реальном клиенте MAX:
+
+- открывается витрина MAX Burger;
+- товары добавляются в корзину;
+- доставка и самовывоз считают правильную сумму;
+- оплата открывается через ЮMoney;
+- статус заказа обновляется после оплаты.
+
+## 6. Проверка после деплоя
 
 ```bash
-# Установите Vercel CLI
-npm install -g vercel
-
-# Войдите в аккаунт
-vercel login
-
-# Деплой проекта
-vercel
-
-# Следуйте инструкциям:
-# ? Set up and deploy "~/keychain-shop"? [Y/n] y
-# ? Which scope do you want to deploy to? [Ваш аккаунт]
-# ? Link to existing project? [N] n
-# ? What's your project's name? keychain-shop-miniapp
-# ? In which directory is your code located? ./
-
-# После первого деплоя, для production:
-vercel --prod
+curl https://shop.sushi-house-39.online/health
 ```
 
-## Шаг 4: Настройка в Telegram
-
-### 4.1 Найдите BotFather
-
-1. Откройте Telegram
-2. Найдите [@BotFather](https://t.me/botfather)
-
-### 4.2 Создайте Mini App
-
-```
-Отправьте: /newapp
-
-BotFather: Choose a bot to create a Web App for
-→ Выберите вашего бота (или создайте нового через /newbot)
-
-BotFather: Now send me a name for the app (up to 30 characters)
-→ Введите: Keychain Shop
-
-BotFather: Good. Now send me a description for your app
-→ Введите: Магазин стильных брелков премиум-класса
-
-BotFather: Please send me a photo or video for the app (max 1 MB)
-→ Отправьте картинку 640x360px (можно найти на unsplash.com)
-
-BotFather: Now send me the Web App URL
-→ Вставьте: https://your-project.vercel.app
-
-BotFather: Done! Your Web App is ready.
-→ Скопируйте полученную ссылку
-```
-
-### 4.3 Добавьте кнопку меню
-
-```
-Отправьте: /setmenubutton
-
-BotFather: Choose a bot
-→ Выберите вашего бота
-
-BotFather: Send me a text for the button (max 30 characters)
-→ Введите: 🛍️ Открыть магазин
-
-BotFather: Now send me a URL for the button
-→ Вставьте: https://your-project.vercel.app
-```
-
-## Шаг 5: Тестирование
-
-### 5.1 Откройте Mini App
-
-1. Найдите вашего бота в Telegram
-2. Нажмите кнопку меню "🛍️ Открыть магазин"
-3. Или используйте прямую ссылку из BotFather
-
-### 5.2 Проверьте функционал
-
-- ✅ Открывается приложение
-- ✅ Отображаются изображения товара
-- ✅ Работает добавление в корзину
-- ✅ Работает форма оформления заказа
-- ✅ Данные отправляются в LEADTEX
-
-### 5.3 Проверьте в LEADTEX
-
-1. Оформите тестовый заказ в Mini App
-2. Перейдите в LEADTEX
-3. Проверьте:
-   - **Интеграции → Входящие вебхуки → История вызовов**
-   - **Список контактов** (найдите по Telegram ID)
-   - **Сценарии** (проверьте запуск)
-
-## Шаг 6: Настройка домена (опционально)
-
-### 6.1 Добавьте свой домен в Vercel
-
-1. В настройках проекта выберите "Domains"
-2. Добавьте ваш домен (например: `shop.yourdomain.com`)
-3. Настройте DNS записи по инструкции Vercel
-
-### 6.2 Обновите URL в BotFather
-
-```
-/editapp
-Выберите бота → Выберите приложение
-Edit Web App URL
-Введите новый URL: https://shop.yourdomain.com
-```
-
-## Устранение проблем
-
-### Проблема: Mini App не открывается
-
-**Решение:**
-- Проверьте, что URL начинается с `https://`
-- Проверьте доступность сайта в браузере
-- Убедитесь, что нет ошибок в консоли браузера (F12)
-
-### Проблема: Данные не отправляются в LEADTEX
-
-**Решение:**
-1. Проверьте URL вебхука в `js/config.js`
-2. Убедитесь, что вебхук активен в LEADTEX
-3. Проверьте, что контакт с таким Telegram ID существует
-4. Посмотрите консоль браузера (F12) на ошибки
-5. Проверьте историю вызовов в LEADTEX
-
-### Проблема: Изображения не загружаются
-
-**Решение:**
-- Проверьте URL изображений в `js/config.js`
-- Убедитесь, что изображения доступны по HTTPS
-- Попробуйте использовать другой источник (например, Unsplash)
-
-### Проблема: Ошибка при деплое на Vercel
-
-**Решение:**
-- Убедитесь, что все файлы добавлены в Git
-- Проверьте файл `vercel.json` на ошибки
-- Попробуйте удалить `.vercel` и повторить деплой
-
-## Обновление приложения
-
-```bash
-# Внесите изменения в код
-git add .
-git commit -m "Описание изменений"
-git push
-
-# Vercel автоматически задеплоит обновление!
-```
-
-## Полезные команды
-
-```bash
-# Просмотр логов Vercel
-vercel logs [URL]
-
-# Список всех деплоев
-vercel list
-
-# Откатить на предыдущую версию
-vercel rollback [deployment-url]
-
-# Удалить проект
-vercel remove [project-name]
-```
-
-## Мониторинг
-
-### Vercel Analytics
-
-1. В настройках проекта включите "Analytics"
-2. Получите статистику:
-   - Количество посещений
-   - География пользователей
-   - Время загрузки страниц
-
-### LEADTEX Analytics
-
-1. Отслеживайте заказы в CRM
-2. Анализируйте конверсию
-3. Следите за воронкой продаж
-
-## Что дальше?
-
-- 📊 Настройте аналитику (Google Analytics, Yandex Metrika)
-- 💳 Подключите платежную систему
-- 📧 Настройте email уведомления
-- 🎨 Кастомизируйте дизайн под ваш бренд
-- 🛍️ Добавьте больше товаров
-- 📱 Создайте каталог товаров
-
----
-
-**Поздравляем! Ваш магазин запущен! 🎉**
+Ожидаемый результат: JSON со статусом приложения, хранилища и ЮMoney.

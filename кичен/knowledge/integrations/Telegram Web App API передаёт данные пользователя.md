@@ -1,4 +1,4 @@
----
+﻿---
 tags: [integration, telegram, webApp, api]
 date: 2026-04-02
 ---
@@ -83,6 +83,7 @@ console.log(localStorage.getItem('telegram_id'));  // Сохранённый ID
 
 ## Связанные заметки
 
-- [[нет базы данных — состояние хранится в памяти и LEADTEX]]
+- [[нет базы данных — состояние хранится в памяти и External CRM]]
 - [[mock объект для разработки вне Telegram]]
 - [[telegram_id не определяется в приложении]]
+

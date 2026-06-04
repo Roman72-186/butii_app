@@ -1,14 +1,14 @@
-# Telegram Ads Bridge Mini App для Keychain Shop
+﻿# Telegram Ads Bridge Mini App для Keychain Shop
 
-Минимальное Telegram Mini App, которое захватывает рекламные параметры из Telegram Ads и пересылает их в Leadteh для точного отслеживания атрибуции.
+Минимальное Telegram Mini App, которое захватывает рекламные параметры из Telegram Ads и пересылает их в CRM для точного отслеживания атрибуции.
 
 ## Проблема, которую решает
 
-При запуске Telegram Ads с прямыми ссылками на бот (`t.me/bot?start=xyz`), платформы вроде Leadteh часто теряют параметр `start` для **новых пользователей**. Этот мост решает проблему следующим образом:
+При запуске Telegram Ads с прямыми ссылками на бот (`t.me/bot?start=xyz`), платформы вроде CRM часто теряют параметр `start` для **новых пользователей**. Этот мост решает проблему следующим образом:
 
 1. Открывается как Mini App (сохраняет параметры)
 2. Захватывает `start_param` и `telegram_id`
-3. Отправляет данные в webhook Leadteh
+3. Отправляет данные в webhook CRM
 4. Автоматически закрывается, чтобы пользователь оказался в чате с ботом
 
 ## Architecture
@@ -22,7 +22,7 @@
     ↓ (captures: telegram_id, start_param, initData)
 [POST to /api/bridge-webhook]
     ↓ (proxy)
-[Leadteh Webhook receives full attribution data]
+[CRM Webhook receives full attribution data]
     ↓
 [Mini App closes → tg.close()]
     ↓
@@ -39,7 +39,7 @@ bridge/
 ├── js/
 │   └── bridge.js        # Core bridge logic
 ├── api/
-│   └── bridge-webhook.js  # Vercel serverless function (proxy to Leadteh)
+│   └── bridge-webhook.js  # Vercel serverless function (proxy to CRM)
 ├── vercel.json          # Vercel deployment config
 ├── .env.example         # Environment variables template
 └── README.md            # This file
@@ -57,8 +57,8 @@ bridge/
 
 2. **Установите переменные окружения в Vercel Dashboard:**
    - Перейдите в Project Settings → Environment Variables
-   - Добавьте `LEADTEH_WEBHOOK_URL` с вашим Leadteh webhook URL
-   - При необходимости добавьте `LEADTEH_API_KEY` и `LEADTEH_BOT_ID`
+   - Добавьте `CRM_WEBHOOK_URL` с вашим CRM webhook URL
+   - При необходимости добавьте `CRM_API_KEY` и `CRM_BOT_ID`
 
 3. **Получите URL деплоя** (например, `https://your-bridge.vercel.app`)
 
@@ -94,9 +94,9 @@ bridge/
    ```
 
 2. **Настройте переменные окружения:**
-   - `LEADTEH_WEBHOOK_URL`: ваш Leadteh webhook URL
-   - `LEADTEH_API_KEY`: ваш API ключ Leadteh (если используется)
-   - `LEADTEH_BOT_ID`: ID бота в Leadteh (если используется)
+   - `CRM_WEBHOOK_URL`: ваш CRM webhook URL
+   - `CRM_API_KEY`: ваш API ключ CRM (если используется)
+   - `CRM_BOT_ID`: ID бота в CRM (если используется)
 
 3. **Создайте .env файл:**
    ```bash
@@ -148,9 +148,9 @@ https://t.me/YOUR_BOT_USERNAME?startapp=APP_IDENTIFIER
 | Канал Telegram | `t.me/mybot/bridge?startapp=tg_channel_main` |
 | Общая реклама | `t.me/mybot/bridge?startapp=promo_2024q1` |
 
-## Данные, отправляемые в Leadteh
+## Данные, отправляемые в CRM
 
-Мост отправляет этот payload в ваш webhook Leadteh:
+Мост отправляет этот payload в ваш webhook CRM:
 
 ```json
 {
@@ -197,7 +197,7 @@ window.BRIDGE_CONFIG = {
 
 ## Безопасность
 
-1. **Валидация initData:** Поле `init_data` содержит подписанный хэш, который можно проверить на сервере с использованием токена бота. Реализуйте проверку в вашем Leadteh workflow при необходимости.
+1. **Валидация initData:** Поле `init_data` содержит подписанный хэш, который можно проверить на сервере с использованием токена бота. Реализуйте проверку в вашем CRM workflow при необходимости.
 
 2. **Никаких секретов во фронтенде:** Все чувствительные URL передаются через serverless функцию.
 
@@ -232,8 +232,8 @@ window.BRIDGE_CONFIG = {
 
 ### Вебхук возвращает ошибку
 - Проверьте логи функции Vercel в панели управления
-- Убедитесь, что переменная окружения `LEADTEH_WEBHOOK_URL` установлена
-- Протестируйте webhook Leadteh напрямую с помощью curl
+- Убедитесь, что переменная окружения `CRM_WEBHOOK_URL` установлена
+- Протестируйте webhook CRM напрямую с помощью curl
 
 ### Приложение показывает "Connecting..." вечно
 - Проверьте вкладку Network браузера на наличие неудачных запросов
@@ -246,9 +246,10 @@ window.BRIDGE_CONFIG = {
 
 1. **Настройте BotFather:** Убедитесь, что ваш бот настроен как Mini App с коротким именем `bridge`
 2. **Обновите конфигурацию:** Установите правильный `BOT_USERNAME` в `index.html`
-3. **Настройте Leadteh:** Убедитесь, что ваш webhook Leadteh правильно обрабатывает полученные параметры
+3. **Настройте CRM:** Убедитесь, что ваш webhook CRM правильно обрабатывает полученные параметры
 4. **Тестирование:** Протестируйте полный путь от рекламной ссылки до оформления заказа в боте
 
 ## Лицензия
 
 MIT
+

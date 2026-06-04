@@ -1,78 +1,96 @@
 // ===================================
-// KEYCHAIN SHOP - ГЛАВНОЕ ПРИЛОЖЕНИЕ
+// MAX BURGER SHOP APP
 // ===================================
 
-// Состояние приложения
 let currentCategory = 'all';
 let cart = [];
 let currentProduct = null;
-
-// ===================================
-// ИНИЦИАЛИЗАЦИЯ
-// ===================================
+let authToken = localStorage.getItem('max_burger_token') || null;
+let currentOrder = null;
+let fulfillmentMethod = 'delivery';
 
 document.addEventListener('DOMContentLoaded', () => {
     init();
 });
 
-function init() {
-    // Настройка хедера
+async function init() {
     setupHeader();
-
-    // Рендер начальной страницы
     renderCategories();
     renderProducts();
-
-    // Обновить бейдж корзины
     updateCartBadge();
+    renderReturnedPayment();
 
-    // Скрыть лоадер и показать приложение
+    try {
+        await authenticateMaxUser();
+    } catch (error) {
+        console.warn('MAX auth fallback:', error);
+    }
+
     setTimeout(() => {
         document.getElementById('loader').style.display = 'none';
         document.getElementById('app').style.display = 'block';
-    }, 500);
+    }, 350);
 }
 
 function setupHeader() {
-    const shopLogo = document.getElementById('shopLogo');
-    const shopName = document.getElementById('shopName');
-
-    if (shopLogo) shopLogo.textContent = CONFIG.SHOP.logo;
-    if (shopName) shopName.textContent = CONFIG.SHOP.name;
+    document.getElementById('shopName').textContent = CONFIG.SHOP.name;
+    const heroUser = document.getElementById('heroUser');
+    if (heroUser) heroUser.textContent = maxApp.getUserName();
 }
 
-// ===================================
-// НАВИГАЦИЯ
-// ===================================
+async function authenticateMaxUser() {
+    const user = maxApp.getUser();
+    const response = await fetch(CONFIG.API.auth, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            id: maxApp.getUserId(),
+            first_name: user.first_name || '',
+            last_name: user.last_name || '',
+            username: user.username || '',
+            start_param: maxApp.startParam || '',
+        }),
+    });
+
+    const data = await response.json();
+    if (!data.ok) throw new Error(data.error || 'AUTH_FAILED');
+
+    authToken = data.token;
+    localStorage.setItem('max_burger_token', authToken);
+}
+
+function apiHeaders() {
+    return {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`,
+    };
+}
 
 function showSection(sectionId) {
-    // Скрыть все секции
-    const sections = document.querySelectorAll('section');
-    sections.forEach(s => s.style.display = 'none');
-
-    // Показать нужную
-    const section = document.getElementById(sectionId);
-    if (section) {
-        section.style.display = 'block';
-        section.scrollTop = 0;
-        window.scrollTo(0, 0);
-    }
-
-    // Haptic feedback
-    if (typeof telegramApp !== 'undefined') {
-        telegramApp.hapticFeedback('light');
-    }
+    document.querySelectorAll('main > section').forEach((section) => {
+        section.style.display = 'none';
+    });
+    const target = document.getElementById(sectionId);
+    if (target) target.style.display = 'block';
+    window.scrollTo(0, 0);
+    maxApp.hapticFeedback('light');
 }
 
 function showProducts() {
     showSection('productsSection');
-    currentProduct = null;
+}
+
+function showCapabilities() {
+    document.getElementById('capabilities')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function scrollToCatalog() {
+    document.getElementById('catalogBlock')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function showProduct(productId) {
     const product = CONFIG.getProductById(productId);
     if (!product) return;
-
     currentProduct = product;
     renderProductDetails(product);
     showSection('productDetailsSection');
@@ -84,54 +102,59 @@ function showCart() {
 }
 
 function showCheckout() {
-    renderCheckout();
-    showSection('checkoutSection');
+    showCart();
 }
 
-function showSuccess(order) {
-    renderSuccessDetails(order);
-    showSection('successSection');
+function showPayment(order, paymentPayload) {
+    currentOrder = order;
+    renderPayment(order, paymentPayload);
+    showSection('paymentSection');
+}
 
-    // Показать кнопку шеринга только в MAX
-    const shareBtn = document.getElementById('shareBtn');
-    if (shareBtn) {
-        shareBtn.style.display = (typeof telegramApp !== 'undefined' && telegramApp.isMAX) ? 'block' : 'none';
-    }
+function showSuccess(order, payment = null) {
+    currentOrder = order;
+    renderSuccessDetails(order, payment);
+    showSection('successSection');
 }
 
 function shareApp() {
-    if (typeof telegramApp !== 'undefined') {
-        telegramApp.hapticFeedback('light');
-        telegramApp.shareApp();
-    }
+    maxApp.hapticFeedback('light');
+    maxApp.shareApp(currentOrder?.order_number || '');
 }
 
-function showMyOrders() {
-    renderMyOrders();
+async function showMyOrders() {
+    const container = document.getElementById('ordersList');
+    container.innerHTML = '<div class="loading-card">Подгружаю историю заказов...</div>';
     showSection('myOrdersSection');
+
+    try {
+        const response = await fetch(CONFIG.API.myOrders, { headers: apiHeaders() });
+        const data = await response.json();
+        if (!data.ok) throw new Error(data.error);
+        renderMyOrders(data.orders || []);
+    } catch (error) {
+        container.innerHTML = `<div class="empty-card"><h3>Историю пока не удалось открыть</h3><p>${escapeHtml(error.message || 'Проверь соединение и попробуй ещё раз.')}</p></div>`;
+    }
 }
 
 function resetApp() {
     currentProduct = null;
+    currentOrder = null;
     currentCategory = 'all';
+    cart = [];
+    fulfillmentMethod = 'delivery';
     renderCategories();
     renderProducts();
+    updateCartBadge();
     showProducts();
 }
 
-// ===================================
-// РЕНДЕРИНГ КАТЕГОРИЙ
-// ===================================
-
 function renderCategories() {
     const container = document.getElementById('categories');
-    if (!container) return;
-
-    container.innerHTML = CONFIG.CATEGORIES.map(cat => `
-        <button class="category-btn ${cat.id === currentCategory ? 'active' : ''}"
-                onclick="selectCategory('${cat.id}')">
-            <span class="category-icon">${cat.icon}</span>
-            <span>${cat.name}</span>
+    container.innerHTML = CONFIG.CATEGORIES.map((category) => `
+        <button class="category-btn ${category.id === currentCategory ? 'active' : ''}" onclick="selectCategory('${category.id}')">
+            <span>${category.icon}</span>
+            <strong>${category.name}</strong>
         </button>
     `).join('');
 }
@@ -140,565 +163,422 @@ function selectCategory(categoryId) {
     currentCategory = categoryId;
     renderCategories();
     renderProducts();
-
-    if (typeof telegramApp !== 'undefined') {
-        telegramApp.hapticFeedback('light');
-    }
+    maxApp.hapticFeedback('light');
 }
 
-// ===================================
-// РЕНДЕРИНГ ПРОДУКТОВ
-// ===================================
+function getCategoryName(categoryId) {
+    return CONFIG.CATEGORIES.find((category) => category.id === categoryId)?.name || categoryId;
+}
 
 function renderProducts() {
     const container = document.getElementById('productsGrid');
-    if (!container) return;
-
     const products = CONFIG.getProductsByCategory(currentCategory);
 
-    container.innerHTML = products.map(product => `
-        <div class="product-card" onclick="showProduct('${product.id}')">
-            <div class="product-card-emoji">${product.emoji || '🔑'}</div>
-            <div class="product-card-body">
-                <div class="product-card-name">${product.name}</div>
-                <div class="product-card-price">${CONFIG.formatPrice(product.price)}</div>
-                <div class="product-card-rating">${CONFIG.formatRating(product.rating)}</div>
+    container.innerHTML = products.map((product) => `
+        <article class="product-card accent-${product.accent}" onclick="showProduct('${product.id}')">
+            <div class="product-photo">
+                <img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.name)}" loading="lazy">
+                <span class="product-badge">${escapeHtml(product.badge)}</span>
+                <strong class="product-price">${CONFIG.formatPrice(product.price)}</strong>
             </div>
-        </div>
+            <div class="product-body">
+                <p class="product-meta">${product.emoji} ${escapeHtml(getCategoryName(product.category))} · ${CONFIG.formatRating(product.rating)}</p>
+                <h3>${escapeHtml(product.name)}</h3>
+                <p>${escapeHtml(product.description)}</p>
+                <div class="product-bullets">
+                    ${product.bullets.map((bullet) => `<span>${escapeHtml(bullet)}</span>`).join('')}
+                </div>
+            </div>
+        </article>
     `).join('');
 }
 
-// ===================================
-// РЕНДЕРИНГ ДЕТАЛЕЙ ПРОДУКТА
-// ===================================
-
 function renderProductDetails(product) {
     const container = document.getElementById('productDetails');
-    if (!container || !product) return;
-
     container.innerHTML = `
-        <div class="product-detail-emoji">${product.emoji || '🔑'}</div>
-        <div class="product-detail-info">
-            <h2>${product.name}</h2>
-            <div class="product-detail-price">${CONFIG.formatPrice(product.price)}</div>
-            <div class="product-detail-rating">${CONFIG.formatRating(product.rating)}</div>
-            <p class="product-detail-description">${product.description}</p>
-
-            <div class="product-detail-actions">
-                <button class="btn-primary" onclick="addToCart('${product.id}', 1)">
-                    <span>Добавить в корзину</span>
-                    <span class="btn-price">${CONFIG.formatPrice(product.price)}</span>
-                </button>
+        <article class="detail-card accent-${product.accent}">
+            <div class="detail-layout">
+                <div class="detail-photo">
+                    <img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.name)}">
+                    <span>${escapeHtml(product.badge)}</span>
+                </div>
+                <div class="detail-copy">
+                    <p class="eyebrow">${product.emoji} ${escapeHtml(getCategoryName(product.category))} · ${CONFIG.formatRating(product.rating)}</p>
+                    <h1>${escapeHtml(product.name)}</h1>
+                    <p>${escapeHtml(product.description)}</p>
+                    <div class="detail-bullets">
+                        ${product.bullets.map((bullet) => `<div><span>✓</span>${escapeHtml(bullet)}</div>`).join('')}
+                    </div>
+                    <div class="detail-price">
+                        <span>Итого за блюдо</span>
+                        <strong>${CONFIG.formatPrice(product.price)}</strong>
+                    </div>
+                    <button class="action-primary full" onclick="addToCart('${product.id}', 1)">Добавить к заказу</button>
+                </div>
             </div>
-        </div>
+        </article>
     `;
 }
-
-// ===================================
-// РАБОТА С КОРЗИНОЙ
-// ===================================
 
 function addToCart(productId, quantity = 1) {
     const product = CONFIG.getProductById(productId);
     if (!product) return;
 
-    // Проверить, есть ли уже такой продукт в корзине
-    const existingItem = cart.find(item => item.product.id === productId);
-    
+    const existingItem = cart.find((item) => item.product.id === productId);
     if (existingItem) {
         existingItem.quantity += quantity;
     } else {
-        cart.push({
-            product: product,
-            quantity: quantity
-        });
+        cart.push({ product, quantity });
     }
 
     updateCartBadge();
-    
-    if (typeof telegramApp !== 'undefined') {
-        telegramApp.hapticFeedback('success');
-    }
+    maxApp.hapticFeedback('success');
+    showCart();
 }
 
 function removeFromCart(productId) {
-    cart = cart.filter(item => item.product.id !== productId);
+    cart = cart.filter((item) => item.product.id !== productId);
     updateCartBadge();
     renderCart();
 }
 
 function updateCartItemQuantity(productId, quantity) {
-    if (quantity <= 0) {
-        removeFromCart(productId);
-        return;
-    }
-
-    const item = cart.find(item => item.product.id === productId);
-    if (item) {
-        item.quantity = quantity;
-        updateCartBadge();
-        renderCart();
-    }
+    if (quantity <= 0) return removeFromCart(productId);
+    const item = cart.find((entry) => entry.product.id === productId);
+    if (!item) return;
+    item.quantity = quantity;
+    updateCartBadge();
+    renderCart();
 }
 
 function updateCartBadge() {
-    const badge = document.getElementById('cartBadge');
     const count = cart.reduce((sum, item) => sum + item.quantity, 0);
-
-    if (badge) {
-        if (count > 0) {
-            badge.textContent = count;
-            badge.style.display = 'flex';
-        } else {
-            badge.style.display = 'none';
-        }
-    }
+    const badge = document.getElementById('cartBadge');
+    badge.textContent = count;
+    badge.style.opacity = count > 0 ? '1' : '0.35';
 }
 
 function getCartTotal() {
-    return cart.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
+    return cart.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
 }
 
-function getCartItemCount() {
-    return cart.reduce((sum, item) => sum + item.quantity, 0);
+function setFulfillment(method) {
+    fulfillmentMethod = method === 'pickup' ? 'pickup' : 'delivery';
+    renderCart();
 }
-
-// ===================================
-// РЕНДЕРИНГ КОРЗИНЫ
-// ===================================
 
 function renderCart() {
     const container = document.getElementById('cartItems');
     const totalElement = document.getElementById('cartTotal');
-    
-    if (!container || !totalElement) return;
+    const checkoutBtn = document.getElementById('checkoutBtn');
+    if (checkoutBtn) checkoutBtn.style.display = 'none';
 
     if (cart.length === 0) {
         container.innerHTML = `
-            <div class="empty-cart">
-                <div class="empty-cart-icon">🛒</div>
-                <h3>Корзина пуста</h3>
-                <p>Добавьте товары в корзину, чтобы оформить заказ</p>
-                <button class="btn-secondary" onclick="showProducts()">Выбрать товары</button>
+            <div class="empty-card">
+                <h3>Заказ ещё не собран</h3>
+                <p>Выбери бургер, крылья, соус или картофель, а мы сразу посчитаем доставку и итоговую сумму.</p>
+                <button class="action-ghost full" onclick="showProducts()">Перейти в меню</button>
             </div>
         `;
-        totalElement.textContent = CONFIG.formatPrice(0);
-        document.getElementById('checkoutBtn').style.display = 'none';
+        totalElement.innerHTML = '';
         return;
     }
 
-    container.innerHTML = cart.map(item => `
-        <div class="cart-item">
-            <div class="cart-item-emoji">${item.product.emoji || '🔑'}</div>
-            <div class="cart-item-info">
-                <div class="cart-item-name">${item.product.name}</div>
-                <div class="cart-item-price">${CONFIG.formatPrice(item.product.price)}</div>
+    container.innerHTML = cart.map((item) => `
+        <article class="cart-item">
+            <img src="${escapeHtml(item.product.image)}" alt="${escapeHtml(item.product.name)}">
+            <div>
+                <h3>${escapeHtml(item.product.name)}</h3>
+                <p>${CONFIG.formatPrice(item.product.price)} · ${escapeHtml(item.product.badge)}</p>
             </div>
-            <div class="cart-item-controls">
-                <button class="quantity-btn" onclick="updateCartItemQuantity('${item.product.id}', ${item.quantity - 1})">-</button>
-                <span class="quantity">${item.quantity}</span>
-                <button class="quantity-btn" onclick="updateCartItemQuantity('${item.product.id}', ${item.quantity + 1})">+</button>
+            <div class="qty-control">
+                <button type="button" aria-label="Уменьшить" onclick="updateCartItemQuantity('${item.product.id}', ${item.quantity - 1})">-</button>
+                <strong>${item.quantity}</strong>
+                <button type="button" aria-label="Увеличить" onclick="updateCartItemQuantity('${item.product.id}', ${item.quantity + 1})">+</button>
             </div>
-            <div class="cart-item-total">${CONFIG.formatPrice(item.product.price * item.quantity)}</div>
-            <button class="remove-item-btn" onclick="removeFromCart('${item.product.id}')">✕</button>
-        </div>
+        </article>
     `).join('');
 
     const subtotal = getCartTotal();
-    const delivery = CONFIG.CATALOG.deliveryCost;
+    const delivery = CONFIG.getDeliveryCost(subtotal, fulfillmentMethod);
+    const total = subtotal + delivery;
+    const user = maxApp.getUser();
+    const defaultName = [user.first_name, user.last_name].filter(Boolean).join(' ');
+
     totalElement.innerHTML = `
-        <div class="cart-subtotal"><span>Товары:</span><span>${CONFIG.formatPrice(subtotal)}</span></div>
-        <div class="cart-delivery"><span>Доставка:</span><span>${CONFIG.formatPrice(delivery)}</span></div>
-        <div class="cart-grand-total"><span>Итого:</span><span>${CONFIG.formatPrice(subtotal + delivery)}</span></div>
-    `;
-    document.getElementById('checkoutBtn').style.display = 'block';
-}
-
-// ===================================
-// РЕНДЕРИНГ ОФОРМЛЕНИЯ ЗАКАЗА
-// ===================================
-
-function renderCheckout() {
-    const container = document.getElementById('checkoutForm');
-    if (!container) return;
-
-    container.innerHTML = `
-        <div class="checkout-summary">
-            <h3>Состав заказа</h3>
-            <div class="checkout-items">
-                ${cart.map(item => `
-                    <div class="checkout-item">
-                        <span class="checkout-item-name">${item.product.name}</span>
-                        <span class="checkout-item-qty">×${item.quantity}</span>
-                        <span class="checkout-item-price">${CONFIG.formatPrice(item.product.price * item.quantity)}</span>
-                    </div>
-                `).join('')}
-            </div>
-            <div class="checkout-delivery">
-                <span>Доставка:</span>
-                <span>${CONFIG.formatPrice(CONFIG.CATALOG.deliveryCost)}</span>
-            </div>
-            <div class="checkout-total">
-                <span>Итого:</span>
-                <span id="checkoutTotal">${CONFIG.formatPrice(getCartTotal() + CONFIG.CATALOG.deliveryCost)}</span>
-            </div>
+        <div class="summary-lines">
+            <div><span>Блюда</span><strong>${CONFIG.formatPrice(subtotal)}</strong></div>
+            <div><span>${fulfillmentMethod === 'pickup' ? 'Самовывоз' : 'Доставка'}</span><strong>${CONFIG.formatPrice(delivery)}</strong></div>
+            <div class="summary-total"><span>К оплате</span><strong>${CONFIG.formatPrice(total)}</strong></div>
         </div>
 
-        <form id="orderForm" onsubmit="submitOrder(event)">
-            <div class="form-section">
-                <h3>Контактные данные</h3>
-
-                <div class="form-group">
-                    <label for="customerName">Имя *</label>
-                    <input type="text" id="customerName" required placeholder="Введите ваше имя">
-                </div>
-
-                <div class="form-group">
-                    <label for="customerPhone">Телефон *</label>
-                    <input type="tel" id="customerPhone" required placeholder="+7 (___) ___-__-__">
-                </div>
-
-                <div class="form-group">
-                    <label for="customerEmail">Email (необязательно)</label>
-                    <input type="email" id="customerEmail" placeholder="your@email.com">
-                </div>
+        <form id="orderForm" class="cart-order-form" onsubmit="submitOrder(event)">
+            <div class="fulfillment-toggle" role="group" aria-label="Получение заказа">
+                <button type="button" class="${fulfillmentMethod === 'delivery' ? 'active' : ''}" onclick="setFulfillment('delivery')">
+                    <span>Доставка</span>
+                    <strong>привезём по Екатеринбургу</strong>
+                </button>
+                <button type="button" class="${fulfillmentMethod === 'pickup' ? 'active' : ''}" onclick="setFulfillment('pickup')">
+                    <span>Самовывоз</span>
+                    <strong>заберу из точки</strong>
+                </button>
             </div>
 
-            <div class="form-section">
-                <h3>Доставка</h3>
-
-                <div class="form-group">
-                    <label for="deliveryCity">Город *</label>
-                    <input type="text" id="deliveryCity" required placeholder="Введите город">
-                </div>
-
-                <div class="form-group">
-                    <label for="deliveryAddress">Адрес *</label>
-                    <textarea id="deliveryAddress" rows="2" required placeholder="Улица, дом, квартира"></textarea>
-                </div>
+            <div class="form-grid">
+                <label>
+                    Имя
+                    <input id="customerName" value="${escapeHtml(defaultName)}" required placeholder="Как подписать заказ">
+                </label>
+                <label>
+                    Телефон
+                    <div class="phone-row">
+                        <input id="customerPhone" type="tel" required placeholder="+7 (___) ___-__-__">
+                        <button type="button" onclick="fillPhoneFromMax()">MAX</button>
+                    </div>
+                </label>
+                <label>
+                    Email для чека
+                    <input id="customerEmail" type="email" placeholder="client@example.com">
+                </label>
+                <label>
+                    Город
+                    <input id="deliveryCity" value="${CONFIG.SHOP.city}" readonly>
+                </label>
             </div>
 
-            <div class="form-section">
-                <h3>Комментарий к заказу</h3>
-                <div class="form-group">
-                    <textarea id="orderComment" rows="3" placeholder="Ваши пожелания"></textarea>
-                </div>
-            </div>
+            ${fulfillmentMethod === 'delivery' ? `
+                <label>
+                    Адрес доставки
+                    <textarea id="deliveryAddress" required placeholder="Улица, дом, квартира, подъезд и ориентир"></textarea>
+                </label>
+            ` : `
+                <label>
+                    Точка самовывоза
+                    <select id="pickupPoint" required>
+                        ${CONFIG.PICKUP_POINTS.map((point) => `<option value="${point.id}">${escapeHtml(point.name)} · ${escapeHtml(point.address)} · ${escapeHtml(point.worktime)}</option>`).join('')}
+                    </select>
+                </label>
+            `}
 
-            <button type="submit" class="btn-primary" id="placeOrderBtn">
-                <span>Оформить заказ</span>
-                <span id="orderTotal">${CONFIG.formatPrice(getCartTotal() + CONFIG.CATALOG.deliveryCost)}</span>
-            </button>
+            <textarea id="orderComment" placeholder="Комментарий: приборы, соусы, удобное время или пожелания"></textarea>
+            <button id="placeOrderBtn" class="action-primary full" type="submit">Перейти к оплате</button>
         </form>
     `;
 
-    // Заполнить имя из Telegram если есть
-    if (typeof telegramApp !== 'undefined') {
-        const user = telegramApp.getUser();
-        if (user && user.first_name) {
-            const nameInput = document.getElementById('customerName');
-            if (nameInput && !nameInput.value) {
-                nameInput.value = user.first_name + (user.last_name ? ' ' + user.last_name : '');
-            }
-        }
-    }
-
-    // Инициализация маски телефона — вызывается здесь, т.к. форма уже отрендерена
     initPhoneMask();
 }
 
-// ===================================
-// ОФОРМЛЕНИЕ ЗАКАЗА
-// ===================================
+function fillPhoneFromMax() {
+    maxApp.requestContact((phone) => {
+        if (!phone) return;
+        const input = document.getElementById('customerPhone');
+        input.value = phone;
+        maxApp.hapticFeedback('success');
+    });
+}
 
 async function submitOrder(event) {
     event.preventDefault();
-
-    const placeOrderBtn = document.getElementById('placeOrderBtn');
-    if (placeOrderBtn.disabled) return;
-
-    const nameInput = document.getElementById('customerName');
-    const phoneInput = document.getElementById('customerPhone');
-    const emailInput = document.getElementById('customerEmail');
-    const cityInput = document.getElementById('deliveryCity');
-    const addressInput = document.getElementById('deliveryAddress');
-    const commentInput = document.getElementById('orderComment');
-
-    // Валидация
-    if (!nameInput.value.trim()) {
-        nameInput.focus();
-        return;
-    }
-
-    if (!phoneInput.value.trim() || phoneInput.value.replace(/\D/g, '').length < 11) {
-        phoneInput.focus();
-        return;
-    }
-
-    if (!cityInput.value.trim()) {
-        cityInput.focus();
-        return;
-    }
-
-    if (!addressInput.value.trim()) {
-        addressInput.focus();
-        return;
-    }
-
-    // Подготовка данных заказа
-    const order = {
-        id: 'ORDER-' + Date.now(),
-        items: cart.map(item => ({
-            id: item.product.id,
-            name: item.product.name,
-            price: item.product.price,
-            quantity: item.quantity,
-            total: item.product.price * item.quantity
-        })),
-        total: getCartTotal() + CONFIG.CATALOG.deliveryCost,
-        customer: {
-            name: nameInput.value.trim(),
-            phone: phoneInput.value.trim(),
-            email: emailInput.value.trim()
-        },
-        delivery: {
-            city: cityInput.value.trim(),
-            address: addressInput.value.trim()
-        },
-        comment: commentInput.value.trim(),
-        timestamp: new Date().toISOString()
-    };
-
-    // Отправить на сервер (webhook)
-    placeOrderBtn.disabled = true;
-    placeOrderBtn.style.opacity = '0.6';
+    const button = document.getElementById('placeOrderBtn');
+    if (button.disabled) return;
+    button.disabled = true;
+    button.textContent = 'Передаю заказ на кухню...';
 
     try {
-        await sendOrderToServer(order);
+        if (!authToken) await authenticateMaxUser();
+        const orderPayload = collectOrderPayload();
+        const orderResponse = await fetch(CONFIG.API.orders, {
+            method: 'POST',
+            headers: apiHeaders(),
+            body: JSON.stringify(orderPayload),
+        });
+        const orderData = await orderResponse.json();
+        if (!orderData.ok) throw new Error(readApiError(orderData) || 'ORDER_FAILED');
 
-        // Очистить корзину
-        cart = [];
-        updateCartBadge();
-        
-        // Haptic feedback
-        if (typeof telegramApp !== 'undefined') {
-            telegramApp.hapticFeedback('success');
-        }
+        button.textContent = 'Открываю оплату...';
+        const paymentResponse = await fetch(CONFIG.API.createPayment, {
+            method: 'POST',
+            headers: apiHeaders(),
+            body: JSON.stringify({ order_id: orderData.order.id }),
+        });
+        const paymentData = await paymentResponse.json();
+        if (!paymentData.ok) throw new Error(paymentData.error || 'PAYMENT_FAILED');
 
-        // Показать успех
-        showSuccess(order);
-
-        // Сбросить форму
-        document.getElementById('orderForm').reset();
-    } catch (e) {
-        console.error('Failed to send order to server:', e);
-        if (typeof telegramApp !== 'undefined') {
-            telegramApp.hapticFeedback('error');
-        }
-        placeOrderBtn.disabled = false;
-        placeOrderBtn.style.opacity = '';
+        maxApp.hapticFeedback('success');
+        showPayment(orderData.order, paymentData);
+    } catch (error) {
+        maxApp.hapticFeedback('error');
+        button.disabled = false;
+        button.textContent = 'Перейти к оплате';
+        alertInline(error.message || 'Не удалось оформить заказ. Попробуй ещё раз.');
     }
 }
 
-function normalizePhone(phone) {
-    const digits = phone.replace(/\D/g, '');
-    if (digits.length === 10) return '+7' + digits;
-    if (digits.length === 11 && digits.startsWith('8')) return '+7' + digits.slice(1);
-    return '+' + digits;
-}
+function collectOrderPayload() {
+    const selectedPickup = CONFIG.PICKUP_POINTS.find((point) => point.id === document.getElementById('pickupPoint')?.value);
+    const deliveryAddress = fulfillmentMethod === 'pickup'
+        ? selectedPickup?.address || CONFIG.SHOP.pickupAddress
+        : document.getElementById('deliveryAddress').value.trim();
 
-async function sendOrderToServer(order) {
-    // Получаем LeadTeX internal ID из startapp параметра
-    // Источники (по приоритету):
-    // 1. MAX SDK: window.WebApp.initDataUnsafe.start_param
-    // 2. Telegram SDK: window.Telegram.WebApp.initDataUnsafe.start_param
-    // 3. URL query string: ?startapp=12345 (когда MAX передаёт через URL)
-    const urlStartParam = new URLSearchParams(window.location.search).get('startapp');
-    const startParam = window.WebApp?.initDataUnsafe?.start_param
-                    || window.Telegram?.WebApp?.initDataUnsafe?.start_param
-                    || (urlStartParam && urlStartParam !== '{{id}}' ? urlStartParam : null)
-                    || null;
-
-    // Получаем telegram_id для переменных
-    let telegramId = localStorage.getItem('telegram_id')
-                  || window.WebApp?.initDataUnsafe?.user?.id?.toString()
-                  || window.Telegram?.WebApp?.initDataUnsafe?.user?.id?.toString()
-                  || CONFIG.MOCK_USER.id.toString();
-
-    // Выбор стратегии поиска контакта:
-    // 1. Если бот передал LeadTeX ID через startapp — ищем по внутреннему id (надёжно)
-    // 2. Иначе — fallback на телефон из формы
-    const contactBy = startParam ? 'id' : 'phone';
-    const contactSearch = startParam ? startParam : normalizePhone(order.customer.phone);
-
-    console.log('📤 Отправка заказа в LEADTEX');
-    console.log('🔗 start_param (LeadTeX ID):', startParam);
-    console.log('🔍 contact_by:', contactBy, '| search:', contactSearch);
-
-    // Подготовка данных для LEADTEX
-    const leadtexPayload = {
-        contact_by: contactBy,
-        search: contactSearch,
-        variables: {
-            order_id: order.id,
-            order_total: order.total.toString(),
-            order_subtotal: order.total.toString(),
-            order_delivery: CONFIG.CATALOG.deliveryCost.toString(),
-            order_items_count: order.items.length.toString(),
-            order_timestamp: order.timestamp,
-
-            order_items: JSON.stringify(order.items),
-
-            customer_name: order.customer.name,
-            customer_phone: order.customer.phone,
-            customer_email: order.customer.email,
-
-            delivery_city: order.delivery.city,
-            delivery_address: order.delivery.address,
-
-            order_comment: order.comment,
-
-            source: "mini_app_keychain_max",
-            telegram_id: telegramId,
-            telegram_user_name: typeof telegramApp !== 'undefined' ? telegramApp.getUserName() : 'debug_user'
-        }
-    };
-
-    console.log('📦 Payload для отправки:', leadtexPayload);
-
-    // Добавляем логирование URL и заголовков
-    console.log('📡 Отправка запроса на URL:', CONFIG.WEBHOOK_URL);
-    console.log('🏷️ Заголовки запроса:', {
-        'Content-Type': 'application/json'
-    });
-
-    const response = await fetch(CONFIG.WEBHOOK_URL, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
+    return {
+        items: cart.map((item) => ({
+            product_id: item.product.id,
+            quantity: item.quantity,
+        })),
+        customer: {
+            name: document.getElementById('customerName').value.trim(),
+            phone: document.getElementById('customerPhone').value.trim(),
+            email: document.getElementById('customerEmail').value.trim(),
         },
-        body: JSON.stringify(leadtexPayload)
-    }).catch(error => {
-        console.error('📡 Fetch Error:', error);
-        throw error; // Перебрасываем ошибку для дальнейшей обработки
-    });
+        delivery: {
+            method: fulfillmentMethod,
+            city: CONFIG.SHOP.city,
+            address: deliveryAddress,
+            pickup_point_id: fulfillmentMethod === 'pickup' ? selectedPickup?.id || '' : '',
+        },
+        comment: document.getElementById('orderComment').value.trim(),
+    };
+}
 
-    // Логирование результата отправки
-    if (response.ok) {
-        console.log('✅ Заказ успешно отправлен в LEADTEX:', leadtexPayload);
-    } else {
-        console.error('❌ Ошибка отправки в LEADTEX:', response.status, await response.text());
+function renderPayment(order, payload) {
+    const container = document.getElementById('paymentDetails');
+    const payment = payload.payment;
+    window.currentYooMoneyForm = payload.paymentForm || null;
+
+    if (payload.needsConfiguration || !payload.paymentForm) {
+        container.innerHTML = `
+            <div class="payment-card">
+                <p class="eyebrow">Оплата временно недоступна</p>
+                <h1>${escapeHtml(order.order_number)}</h1>
+                <p>Заказ сохранён. Мы покажем итоговую сумму, а оплату можно завершить после подключения платёжного канала.</p>
+                <div class="payment-total">${CONFIG.formatPrice(order.total)}</div>
+                <button class="action-primary full" onclick="showSuccess(currentOrder)">Показать результат</button>
+            </div>
+        `;
+        return;
     }
 
-    return response.json();
-}
-
-// ===================================
-// РЕНДЕРИНГ УСПЕШНОГО ЗАКАЗА
-// ===================================
-
-function renderSuccessDetails(order) {
-    const container = document.getElementById('successDetails');
-    if (!container || !order) return;
-
     container.innerHTML = `
-        <div class="success-order-id">Заказ №${order.id}</div>
-        <div class="success-order-items">
-            <h3>Состав заказа</h3>
-            ${order.items.map(item => `
-                <div class="success-order-item">
-                    <span class="item-name">${item.name}</span>
-                    <span class="item-qty">×${item.quantity}</span>
-                    <span class="item-price">${CONFIG.formatPrice(item.total)}</span>
-                </div>
-            `).join('')}
-        </div>
-        <div class="success-order-total">
-            <span>Итого:</span>
-            <span>${CONFIG.formatPrice(order.total)}</span>
-        </div>
-        <div class="success-delivery-info">
-            <h3>Доставка</h3>
-            <p><strong>Город:</strong> ${order.delivery.city}</p>
-            <p><strong>Адрес:</strong> ${order.delivery.address}</p>
+        <div class="payment-card">
+            <p class="eyebrow">Безопасная оплата ЮMoney</p>
+            <h1>${escapeHtml(order.order_number)}</h1>
+            <p>Нажми «Оплатить», чтобы перейти на форму ЮMoney. После подтверждения мы обновим статус заказа.</p>
+            <div class="payment-total">${CONFIG.formatPrice(payment.amount)}</div>
+            <button class="action-primary full" onclick="submitYooMoneyForm(window.currentYooMoneyForm)">Оплатить заказ</button>
+            <button class="action-ghost full" onclick="checkPaymentStatus('${order.id}')">Обновить статус</button>
         </div>
     `;
 }
 
-// ===================================
-// МОИ ЗАКАЗЫ
-// ===================================
+function submitYooMoneyForm(formConfig) {
+    const form = document.createElement('form');
+    form.method = formConfig.method;
+    form.action = formConfig.action;
+    form.style.display = 'none';
 
-function renderMyOrders() {
-    // В реальном приложении здесь будет загрузка заказов из localStorage или API
+    Object.entries(formConfig.fields).forEach(([name, value]) => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = name;
+        input.value = value;
+        form.appendChild(input);
+    });
+
+    document.body.appendChild(form);
+    form.submit();
+}
+
+async function checkPaymentStatus(orderId) {
+    const response = await fetch(CONFIG.API.paymentStatus(orderId), { headers: apiHeaders() });
+    const data = await response.json();
+    if (!data.ok) return alertInline(data.error || 'Статус оплаты пока не найден');
+    showSuccess(data.order, data.payment);
+}
+
+function renderReturnedPayment() {
+    const returnedOrder = new URLSearchParams(location.search).get('payment_return');
+    if (!returnedOrder) return;
+    setTimeout(() => {
+        if (authToken) checkPaymentStatus(returnedOrder);
+    }, 800);
+}
+
+function renderSuccessDetails(order, payment = null) {
+    const status = payment?.status || order.status;
+    const paid = status === 'succeeded' || order.status === 'paid';
+    document.getElementById('successTitle').textContent = paid ? 'Оплата прошла' : 'Заказ создан';
+    document.getElementById('successMessage').textContent = paid
+        ? 'Кухня получила заказ. Детали и статус можно посмотреть здесь же.'
+        : 'Оплата ещё не подтверждена. Вернись после ЮMoney и обнови статус.';
+
+    const method = order.fulfillment_method === 'pickup' || order.delivery?.method === 'pickup' ? 'Самовывоз' : 'Доставка';
+    document.getElementById('successDetails').innerHTML = `
+        <div><span>Заказ</span><strong>${escapeHtml(order.order_number)}</strong></div>
+        <div><span>Получение</span><strong>${method}</strong></div>
+        <div><span>Статус заказа</span><strong>${escapeHtml(order.status)}</strong></div>
+        <div><span>Статус оплаты</span><strong>${escapeHtml(status || 'not_created')}</strong></div>
+        <div class="summary-total"><span>Сумма</span><strong>${CONFIG.formatPrice(order.total)}</strong></div>
+    `;
+}
+
+function renderMyOrders(orders) {
     const container = document.getElementById('ordersList');
-    if (!container) return;
+    if (orders.length === 0) {
+        container.innerHTML = '<div class="empty-card"><h3>История заказов пустая</h3><p>Собери первый заказ, и он появится здесь для повторной проверки статуса.</p></div>';
+        return;
+    }
 
-    container.innerHTML = `
-        <div class="empty-orders">
-            <div class="empty-orders-icon">🚧</div>
-            <h3>Раздел в разработке</h3>
-            <p>История заказов появится в следующей версии</p>
-            <button class="btn-secondary" onclick="showProducts()">Вернуться в каталог</button>
-        </div>
-    `;
+    container.innerHTML = orders.map((order) => `
+        <article class="order-card">
+            <div>
+                <p class="eyebrow">${escapeHtml(order.status)}</p>
+                <h3>${escapeHtml(order.order_number)}</h3>
+            </div>
+            <strong>${CONFIG.formatPrice(order.total)}</strong>
+            <button class="action-ghost" onclick="checkPaymentStatus('${order.id}')">Обновить</button>
+        </article>
+    `).join('');
 }
-
-// ===================================
-// МАСКА ТЕЛЕФОНА
-// ===================================
 
 function initPhoneMask() {
     const phoneInput = document.getElementById('customerPhone');
     if (!phoneInput) return;
 
-    phoneInput.addEventListener('input', (e) => {
-        let value = e.target.value.replace(/\D/g, '');
-
+    phoneInput.addEventListener('input', (event) => {
+        let value = event.target.value.replace(/\D/g, '');
         if (value.length > 0) {
-            if (value[0] === '8') {
-                value = '7' + value.slice(1);
-            }
-            if (value[0] !== '7') {
-                value = '7' + value;
-            }
+            if (value[0] === '8') value = '7' + value.slice(1);
+            if (value[0] !== '7') value = '7' + value;
         }
 
-        let formatted = '';
-        if (value.length > 0) {
-            formatted = '+7';
-        }
-        if (value.length > 1) {
-            formatted += ' (' + value.slice(1, 4);
-        }
-        if (value.length > 4) {
-            formatted += ') ' + value.slice(4, 7);
-        }
-        if (value.length > 7) {
-            formatted += '-' + value.slice(7, 9);
-        }
-        if (value.length > 9) {
-            formatted += '-' + value.slice(9, 11);
-        }
-
-        e.target.value = formatted;
+        let formatted = value.length > 0 ? '+7' : '';
+        if (value.length > 1) formatted += ' (' + value.slice(1, 4);
+        if (value.length > 4) formatted += ') ' + value.slice(4, 7);
+        if (value.length > 7) formatted += '-' + value.slice(7, 9);
+        if (value.length > 9) formatted += '-' + value.slice(9, 11);
+        event.target.value = formatted;
     });
+}
 
-    phoneInput.addEventListener('keydown', (e) => {
-        // Разрешить: backspace, delete, tab, escape, enter
-        if ([46, 8, 9, 27, 13].indexOf(e.keyCode) !== -1 ||
-            // Разрешить: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
-            (e.keyCode === 65 && e.ctrlKey === true) ||
-            (e.keyCode === 67 && e.ctrlKey === true) ||
-            (e.keyCode === 86 && e.ctrlKey === true) ||
-            (e.keyCode === 88 && e.ctrlKey === true) ||
-            // Разрешить: home, end, left, right
-            (e.keyCode >= 35 && e.keyCode <= 39)) {
-            return;
-        }
-        // Запретить не цифры
-        if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
-            e.preventDefault();
-        }
-    });
+function readApiError(data) {
+    if (data.details?.[0]?.message) return data.details[0].message;
+    return data.error;
+}
+
+function escapeHtml(value) {
+    return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+function alertInline(message) {
+    const node = document.createElement('div');
+    node.className = 'toast';
+    node.textContent = message;
+    document.body.appendChild(node);
+    setTimeout(() => node.remove(), 3200);
 }

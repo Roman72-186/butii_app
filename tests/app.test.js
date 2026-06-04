@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Тесты для app.js
  * @jest-environment jsdom
  */
@@ -379,14 +379,14 @@ describe('App', () => {
 
     });
 
-    describe('sendToLeadtex()', () => {
+    describe('sendToExternal CRM()', () => {
 
         const normalizePhone = (phone) => {
             const digits = phone.replace(/\D/g, '');
             return '+' + (digits.startsWith('8') ? '7' + digits.slice(1) : digits);
         };
 
-        const sendToLeadtex = async (orderData, startParam = null) => {
+        const sendToExternal CRM = async (orderData, startParam = null) => {
             const contactBy = startParam ? 'id' : 'phone';
             const contactSearch = startParam ? startParam : normalizePhone(orderData.customer.phone);
 
@@ -428,7 +428,7 @@ describe('App', () => {
         test('должна отправлять POST запрос на WEBHOOK_URL', async () => {
             global.fetch.mockResolvedValueOnce({ ok: true });
 
-            await sendToLeadtex(testOrderData);
+            await sendToExternal CRM(testOrderData);
 
             expect(fetch).toHaveBeenCalledWith(
                 CONFIG.WEBHOOK_URL,
@@ -442,21 +442,21 @@ describe('App', () => {
         test('должна возвращать true при успешном ответе', async () => {
             global.fetch.mockResolvedValueOnce({ ok: true });
 
-            const result = await sendToLeadtex(testOrderData);
+            const result = await sendToExternal CRM(testOrderData);
             expect(result).toBe(true);
         });
 
         test('должна возвращать false при ошибке', async () => {
             global.fetch.mockResolvedValueOnce({ ok: false, status: 500 });
 
-            const result = await sendToLeadtex(testOrderData);
+            const result = await sendToExternal CRM(testOrderData);
             expect(result).toBe(false);
         });
 
-        test('если есть start_param — ищет по LeadTeX id', async () => {
+        test('если есть start_param — ищет по External CRM id', async () => {
             global.fetch.mockResolvedValueOnce({ ok: true });
 
-            await sendToLeadtex(testOrderData, '55755822');
+            await sendToExternal CRM(testOrderData, '55755822');
 
             const callBody = JSON.parse(fetch.mock.calls[0][1].body);
             expect(callBody.contact_by).toBe('id');
@@ -466,7 +466,7 @@ describe('App', () => {
         test('без start_param — ищет по телефону (fallback)', async () => {
             global.fetch.mockResolvedValueOnce({ ok: true });
 
-            await sendToLeadtex(testOrderData, null);
+            await sendToExternal CRM(testOrderData, null);
 
             const callBody = JSON.parse(fetch.mock.calls[0][1].body);
             expect(callBody.contact_by).toBe('phone');
@@ -476,7 +476,7 @@ describe('App', () => {
         test('должна включать telegram_id в variables', async () => {
             global.fetch.mockResolvedValueOnce({ ok: true });
 
-            await sendToLeadtex(testOrderData);
+            await sendToExternal CRM(testOrderData);
 
             const callBody = JSON.parse(fetch.mock.calls[0][1].body);
             expect(callBody.variables.telegram_id).toBe('123456789');
@@ -571,3 +571,4 @@ describe('Интеграционные тесты', () => {
     });
 
 });
+

@@ -1,4 +1,4 @@
----
+﻿---
 tags: [debugging, telegram, telegram_id]
 date: 2026-04-02
 ---
@@ -9,7 +9,7 @@ date: 2026-04-02
 
 - В консоли: `⚠️ Telegram Web App API недоступен`
 - `telegramApp.getUserId()` возвращает `123456789` (mock-значение)
-- Заказы уходят в LEADTEX с mock ID вместо реального
+- Заказы уходят в External CRM с mock ID вместо реального
 
 ## Порядок разрешения telegram_id в app.js
 
@@ -76,4 +76,5 @@ console.log('getUser:', telegramApp.getUser());
 
 - [[Telegram Web App API передаёт данные пользователя]]
 - [[mock объект для разработки вне Telegram]]
-- [[заказ не отправляется в LEADTEX]]
+- [[заказ не отправляется в External CRM]]
+

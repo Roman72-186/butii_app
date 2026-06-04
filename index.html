@@ -3,168 +3,153 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Keychain Shop - Интернет-магазин брелков</title>
+    <title>MAX Burger — бургеры и крылья в Екатеринбурге</title>
 
-    <!-- MAX Web App SDK (primary) + Telegram fallback -->
     <script src="https://st.max.ru/js/max-web-app.js"></script>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
-    <!-- Styles -->
     <link rel="stylesheet" href="css/style.css">
-
-    <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔑</text></svg>">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23060606'/><text x='50' y='66' text-anchor='middle' font-size='58' fill='%23d8ff3e'>M</text></svg>">
 </head>
 <body>
-    <!-- Loader -->
     <div id="loader" class="loader">
-        <div class="loader-spinner"></div>
+        <div class="loader-mark">M</div>
     </div>
 
-    <!-- Main Container -->
-    <div id="app" class="container" style="display: none;">
-
-        <!-- Header -->
-        <header class="header">
-            <div class="header-content">
-                <div class="logo" onclick="showProducts()">
-                    <span class="logo-icon" id="shopLogo">🔑</span>
-                    <span class="logo-text" id="shopName">Keychain Shop</span>
-                </div>
-                <div class="header-actions">
-                    <button class="header-btn" id="cartBtn" onclick="showCart()">
-                        <span class="header-btn-icon">🛒</span>
-                        <span class="header-btn-badge" id="cartBadge" style="display: none;">0</span>
-                    </button>
-                </div>
-            </div>
+    <div id="app" class="app-shell" style="display: none;">
+        <header class="topbar">
+            <button class="brand" onclick="showProducts()" aria-label="На главный экран">
+                <span class="brand-mark">MB</span>
+                <span>
+                    <strong id="shopName">MAX Burger</strong>
+                    <small>Екатеринбург</small>
+                </span>
+            </button>
+            <button class="cart-button" onclick="showCart()" aria-label="Корзина">
+                <span>Корзина</span>
+                <strong id="cartBadge">0</strong>
+            </button>
         </header>
 
-        <!-- ===================================
-             СЕКЦИЯ 1: КАТАЛОГ ТОВАРОВ
-             =================================== -->
-        <section class="products-section" id="productsSection">
-            <!-- Категории -->
-            <div class="categories-scroll">
-                <div class="categories" id="categories"></div>
-            </div>
-
-            <!-- Сетка товаров -->
-            <div class="products-grid" id="productsGrid"></div>
-        </section>
-
-        <!-- ===================================
-             СЕКЦИЯ 2: ДЕТАЛИ ТОВАРА
-             =================================== -->
-        <section class="product-details-section" id="productDetailsSection" style="display: none;">
-            <div class="section-header">
-                <button class="back-btn" onclick="showProducts()">
-                    <span class="back-icon">←</span> Назад
-                </button>
-                <h2>Детали товара</h2>
-            </div>
-
-            <!-- Детали товара -->
-            <div class="product-details-container" id="productDetails"></div>
-        </section>
-
-        <!-- ===================================
-             СЕКЦИЯ 3: КОРЗИНА
-             =================================== -->
-        <section class="cart-section" id="cartSection" style="display: none;">
-            <div class="section-header">
-                <button class="back-btn" onclick="showProducts()">
-                    <span class="back-icon">←</span> Назад
-                </button>
-                <h2>Корзина</h2>
-            </div>
-
-            <!-- Товары в корзине -->
-            <div class="cart-container">
-                <div class="cart-items" id="cartItems"></div>
-                
-                <div class="cart-summary">
-                    <div class="cart-total">
-                        <span>Итого:</span>
-                        <span id="cartTotal">0 ₽</span>
+        <main>
+            <section id="productsSection" class="screen screen-home">
+                <div class="hero">
+                    <div class="hero-copy">
+                        <p class="eyebrow">Екатеринбург · доставка и самовывоз</p>
+                        <h1>Горячие бургеры и крылья без лишних переходов</h1>
+                        <p class="hero-lead">Открой меню прямо в MAX, собери заказ за пару касаний и выбери, как удобнее получить еду: доставкой по Екатеринбургу или самовывозом.</p>
+                        <div class="hero-actions">
+                            <button class="action-primary" onclick="scrollToCatalog()">Собрать заказ</button>
+                            <button class="action-ghost" onclick="showCart()">Корзина</button>
+                        </div>
                     </div>
-                    <button class="btn-primary" id="checkoutBtn" onclick="showCheckout()" style="display: none;">
-                        <span>Оформить заказ</span>
-                        <span class="btn-arrow">→</span>
-                    </button>
+                    <div class="phone-stage" aria-hidden="true">
+                        <div class="phone-card card-one">
+                            <span>Сегодня</span>
+                            <strong>Smash сет</strong>
+                        </div>
+                        <div class="phone-card card-two">
+                            <span>Доставка</span>
+                            <strong>35 мин</strong>
+                        </div>
+                        <div class="phone-card card-three">
+                            <span>MAX</span>
+                            <strong>горячо</strong>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </section>
 
-        <!-- ===================================
-             СЕКЦИЯ 4: ОФОРМЛЕНИЕ ЗАКАЗА
-             =================================== -->
-        <section class="checkout-section" id="checkoutSection" style="display: none;">
-            <div class="section-header">
-                <button class="back-btn" onclick="showCart()">
-                    <span class="back-icon">←</span> Назад
-                </button>
-                <h2>Оформление заказа</h2>
-            </div>
+                <div id="capabilities" class="capabilities">
+                    <article>
+                        <span>01</span>
+                        <h2>Бургеры без ожидания</h2>
+                        <p>Выбирай smash, сырный бургер или крылья, пока аппетит ещё на пике.</p>
+                    </article>
+                    <article>
+                        <span>02</span>
+                        <h2>Горячим к столу</h2>
+                        <p>Доставка по Екатеринбургу или самовывоз из точки, чтобы заказ не терял вкус в дороге.</p>
+                    </article>
+                    <article>
+                        <span>03</span>
+                        <h2>Соусы и допы рядом</h2>
+                        <p>Добавь картофель, коул слоу, колу и фирменные соусы сразу к основному заказу.</p>
+                    </article>
+                </div>
 
-            <!-- Форма оформления заказа -->
-            <div class="checkout-container" id="checkoutForm"></div>
-        </section>
+                <div id="catalogBlock" class="catalog-block">
+                    <div class="section-title">
+                        <p class="eyebrow">Меню</p>
+                        <h2>Выбирай по настроению</h2>
+                    </div>
+                    <div class="categories" id="categories"></div>
+                    <div class="products-grid" id="productsGrid"></div>
+                </div>
+            </section>
 
-        <!-- ===================================
-             СЕКЦИЯ 5: УСПЕШНЫЙ ЗАКАЗ
-             =================================== -->
-        <section class="success-section" id="successSection" style="display: none;">
-            <div class="success-animation">
-                <div class="success-icon">✓</div>
-            </div>
-            <h2>Заказ оформлен!</h2>
-            <p class="success-message">
-                Ваш заказ принят. Мы свяжемся с вами для подтверждения.
-            </p>
-            <div class="success-details" id="successDetails"></div>
-            <div class="success-actions">
-                <button class="btn-share" id="shareBtn" onclick="shareApp()" style="display:none;">
-                    📤 Поделиться магазином
-                </button>
-                <button class="btn-primary" onclick="showMyOrders()">
-                    <span>Мои заказы</span>
-                    <span class="btn-arrow">→</span>
-                </button>
-                <button class="btn-secondary" onclick="resetApp()">
-                    Заказать ещё
-                </button>
-            </div>
-        </section>
+            <section id="productDetailsSection" class="screen screen-detail" style="display: none;">
+                <div class="section-header">
+                    <button class="back-btn" onclick="showProducts()">←</button>
+                    <h2>Детали блюда</h2>
+                </div>
+                <div id="productDetails"></div>
+            </section>
 
-        <!-- ===================================
-             СЕКЦИЯ 6: МОИ ЗАКАЗЫ
-             =================================== -->
-        <section class="my-orders-section" id="myOrdersSection" style="display: none;">
-            <div class="section-header">
-                <button class="back-btn" onclick="showProducts()">
-                    <span class="back-icon">←</span> Назад
-                </button>
-                <h2>Мои заказы</h2>
-            </div>
+            <section id="cartSection" class="screen" style="display: none;">
+                <div class="section-header">
+                    <button class="back-btn" onclick="showProducts()">←</button>
+                    <h2>Твой заказ</h2>
+                </div>
+                <div class="cart-container">
+                    <div class="cart-items" id="cartItems"></div>
+                    <div class="cart-summary">
+                        <div id="cartTotal"></div>
+                        <button class="action-primary full" id="checkoutBtn" onclick="showCheckout()" style="display: none;">Перейти к оплате</button>
+                    </div>
+                </div>
+            </section>
 
-            <!-- Пустое состояние -->
-            <div id="noOrders" class="empty-state">
-                <div class="empty-icon">📦</div>
-                <h3>Заказов пока нет</h3>
-                <p>После оформления заказа он появится здесь</p>
-                <button class="btn-secondary" onclick="showProducts()">Сделать заказ</button>
-            </div>
+            <section id="checkoutSection" class="screen" style="display: none;">
+                <div class="section-header">
+                    <button class="back-btn" onclick="showCart()">←</button>
+                    <h2>Контакты и получение</h2>
+                </div>
+                <div id="checkoutForm" class="checkout-container"></div>
+            </section>
 
-            <!-- Список заказов -->
-            <div id="ordersList" class="orders-list" style="display: none;"></div>
-        </section>
+            <section id="paymentSection" class="screen payment-screen" style="display: none;">
+                <div class="section-header">
+                    <button class="back-btn" onclick="showCart()">←</button>
+                    <h2>Оплата</h2>
+                </div>
+                <div id="paymentDetails"></div>
+            </section>
 
+            <section id="successSection" class="screen success-screen" style="display: none;">
+                <div class="success-hero">
+                    <span class="success-icon">✓</span>
+                    <p class="eyebrow">MAX Burger</p>
+                    <h2 id="successTitle">Заказ принят</h2>
+                    <p id="successMessage">Проверь оплату и детали заказа ниже.</p>
+                </div>
+                <div class="success-details" id="successDetails"></div>
+                <div class="success-actions">
+                    <button class="action-primary full" id="shareBtn" onclick="shareApp()">Поделиться в MAX</button>
+                    <button class="action-ghost full" onclick="showMyOrders()">Мои заказы</button>
+                    <button class="action-ghost full" onclick="resetApp()">Собрать ещё заказ</button>
+                </div>
+            </section>
+
+            <section id="myOrdersSection" class="screen" style="display: none;">
+                <div class="section-header">
+                    <button class="back-btn" onclick="showProducts()">←</button>
+                    <h2>Мои заказы</h2>
+                </div>
+                <div id="ordersList" class="orders-list"></div>
+            </section>
+        </main>
     </div>
 
-    <!-- Scripts -->
     <script src="js/config.js"></script>
-    <script src="js/telegram.js"></script>
+    <script src="js/max-app.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>
