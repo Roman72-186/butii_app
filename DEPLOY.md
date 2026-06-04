@@ -82,7 +82,7 @@ https://shop.sushi-house-39.online/
 ## 6. Проверка после деплоя
 
 ```bash
-curl https://shop.sushi-house-39.online/health
+curl https://shop.sushi-house-39.online/api/health
 ```
 
 Ожидаемый результат: JSON со статусом приложения, хранилища и ЮMoney.
