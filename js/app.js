@@ -4,8 +4,7 @@
 
 let currentCategory = 'all';
 let cart = [];
-let currentProduct = null;
-let cartReturnProductId = null;
+let productDraftQuantities = {};
 let authToken = localStorage.getItem('max_burger_token') || null;
 let currentOrder = null;
 let fulfillmentMethod = 'delivery';
@@ -78,7 +77,6 @@ function showSection(sectionId) {
 }
 
 function showProducts() {
-    currentProduct = null;
     showSection('productsSection');
 }
 
@@ -91,15 +89,10 @@ function scrollToCatalog() {
 }
 
 function showProduct(productId) {
-    const product = CONFIG.getProductById(productId);
-    if (!product) return;
-    currentProduct = product;
-    renderProductDetails(product);
-    showSection('productDetailsSection');
+    openProductPreview(productId);
 }
 
-function showCart(returnProductId = null) {
-    cartReturnProductId = returnProductId;
+function showCart() {
     renderCart();
     showSection('cartSection');
 }
@@ -109,13 +102,6 @@ function showCheckout() {
 }
 
 function goBackFromCart() {
-    if (cartReturnProductId) {
-        const productId = cartReturnProductId;
-        cartReturnProductId = null;
-        showProduct(productId);
-        return;
-    }
-
     showProducts();
 }
 
@@ -152,7 +138,6 @@ async function showMyOrders() {
 }
 
 function resetApp() {
-    currentProduct = null;
     currentOrder = null;
     currentCategory = 'all';
     cart = [];
@@ -233,12 +218,12 @@ function renderProducts() {
     const products = CONFIG.getProductsByCategory(currentCategory);
 
     container.innerHTML = products.map((product) => `
-        <article class="product-card accent-${product.accent}" onclick="showProduct('${product.id}')">
-            <div class="product-photo">
+        <article class="product-card accent-${product.accent}">
+            <button type="button" class="product-photo product-photo-button" onclick="openProductPreview('${product.id}')" aria-label="Открыть фото и описание ${escapeHtml(product.name)}">
                 <img src="${escapeHtml(getProductImageSrc(product))}" alt="${escapeHtml(product.name)}" loading="lazy" onerror="handleProductImageError(this, '${escapeHtml(product.id)}')">
                 <span class="product-badge">${escapeHtml(product.badge)}</span>
                 <strong class="product-price">${CONFIG.formatPrice(product.price)}</strong>
-            </div>
+            </button>
             <div class="product-body">
                 <p class="product-meta">${product.emoji} ${escapeHtml(getCategoryName(product.category))} · ${CONFIG.formatRating(product.rating)}</p>
                 <h3>${escapeHtml(product.name)}</h3>
@@ -247,11 +232,100 @@ function renderProducts() {
                     ${product.bullets.map((bullet) => `<span>${escapeHtml(bullet)}</span>`).join('')}
                 </div>
                 <div class="product-actions">
-                    <button class="action-primary full" onclick="addToCartFromPreview(event, '${product.id}', this)">Добавить в корзину</button>
+                    ${renderPreviewCartActions(product)}
                 </div>
             </div>
         </article>
     `).join('');
+}
+
+function renderPreviewCartActions(product) {
+    const draftQuantity = productDraftQuantities[product.id] || 0;
+
+    if (draftQuantity > 0) {
+        return `
+            <div class="preview-quantity">
+                <span>Количество</span>
+                <div class="qty-control">
+                    <button type="button" aria-label="Уменьшить" onclick="changeProductDraftQuantity('${product.id}', ${draftQuantity - 1})">-</button>
+                    <strong>${draftQuantity}</strong>
+                    <button type="button" aria-label="Увеличить" onclick="changeProductDraftQuantity('${product.id}', ${draftQuantity + 1})">+</button>
+                </div>
+                <button type="button" class="confirm-add-btn" aria-label="Подтвердить" onclick="confirmProductDraftQuantity('${product.id}')">✓</button>
+            </div>
+        `;
+    }
+
+    return `
+        <button class="action-primary full" onclick="startProductDraftQuantity('${product.id}')">Добавить в корзину</button>
+    `;
+}
+
+function startProductDraftQuantity(productId) {
+    productDraftQuantities = { ...productDraftQuantities, [productId]: getCartQuantity(productId) || 1 };
+    renderProducts();
+    maxApp.hapticFeedback('light');
+}
+
+function changeProductDraftQuantity(productId, quantity) {
+    if (quantity <= 0) {
+        const nextDrafts = { ...productDraftQuantities };
+        delete nextDrafts[productId];
+        productDraftQuantities = nextDrafts;
+    } else {
+        productDraftQuantities = { ...productDraftQuantities, [productId]: quantity };
+    }
+
+    renderProducts();
+    maxApp.hapticFeedback('light');
+}
+
+function confirmProductDraftQuantity(productId) {
+    const quantity = productDraftQuantities[productId] || 1;
+    const product = CONFIG.getProductById(productId);
+    if (!product) return;
+
+    setCartItemQuantity(productId, quantity, false);
+    const nextDrafts = { ...productDraftQuantities };
+    delete nextDrafts[productId];
+    productDraftQuantities = nextDrafts;
+
+    renderProducts();
+    maxApp.hapticFeedback('success');
+    alertInline(`${product.name}: ${quantity} шт. в корзине`);
+}
+
+function openProductPreview(productId) {
+    const product = CONFIG.getProductById(productId);
+    const modal = document.getElementById('productPreviewModal');
+    if (!product || !modal) return;
+
+    document.getElementById('productPreviewImage').src = getProductImageSrc(product);
+    document.getElementById('productPreviewImage').alt = product.name;
+    document.getElementById('productPreviewBadge').textContent = product.badge;
+    document.getElementById('productPreviewMeta').textContent = `${product.emoji} ${getCategoryName(product.category)} · ${CONFIG.formatRating(product.rating)}`;
+    document.getElementById('productPreviewTitle').textContent = product.name;
+    document.getElementById('productPreviewDescription').textContent = product.description;
+    document.getElementById('productPreviewBullets').innerHTML = product.bullets
+        .map((bullet) => `<span>${escapeHtml(bullet)}</span>`)
+        .join('');
+    document.getElementById('productPreviewPrice').textContent = CONFIG.formatPrice(product.price);
+
+    modal.hidden = false;
+    document.body.classList.add('modal-open');
+    maxApp.hapticFeedback('light');
+}
+
+function closeProductPreview() {
+    const modal = document.getElementById('productPreviewModal');
+    if (!modal) return;
+
+    modal.hidden = true;
+    document.body.classList.remove('modal-open');
+}
+
+function closeProductPreviewOnBackdrop(event) {
+    if (event.target === event.currentTarget) closeProductPreview();
 }
 
 function getCartItem(productId) {
@@ -260,68 +334,6 @@ function getCartItem(productId) {
 
 function getCartQuantity(productId) {
     return getCartItem(productId)?.quantity || 0;
-}
-
-function renderProductActions(product) {
-    const quantity = getCartQuantity(product.id);
-
-    if (quantity > 0) {
-        return `
-            <div class="detail-quantity">
-                <span>Количество</span>
-                <div class="qty-control">
-                    <button type="button" aria-label="Уменьшить" onclick="updateDetailProductQuantity('${product.id}', ${quantity - 1})">-</button>
-                    <strong>${quantity}</strong>
-                    <button type="button" aria-label="Увеличить" onclick="updateDetailProductQuantity('${product.id}', ${quantity + 1})">+</button>
-                </div>
-            </div>
-            <button class="action-ghost full" onclick="showCart('${product.id}')">В корзину</button>
-        `;
-    }
-
-    return `
-        <button class="action-primary full" onclick="addToCart('${product.id}', 1, this)">Добавить к заказу</button>
-    `;
-}
-
-function renderProductDetails(product) {
-    const container = document.getElementById('productDetails');
-    container.innerHTML = `
-        <article class="detail-card accent-${product.accent}">
-            <div class="detail-layout">
-                <div class="detail-photo">
-                    <img src="${escapeHtml(getProductImageSrc(product))}" alt="${escapeHtml(product.name)}" onerror="handleProductImageError(this, '${escapeHtml(product.id)}')">
-                    <span>${escapeHtml(product.badge)}</span>
-                </div>
-                <div class="detail-copy">
-                    <p class="eyebrow">${product.emoji} ${escapeHtml(getCategoryName(product.category))} · ${CONFIG.formatRating(product.rating)}</p>
-                    <h1>${escapeHtml(product.name)}</h1>
-                    <p>${escapeHtml(product.description)}</p>
-                    <div class="detail-bullets">
-                        ${product.bullets.map((bullet) => `<div><span>✓</span>${escapeHtml(bullet)}</div>`).join('')}
-                    </div>
-                    <div class="detail-price">
-                        <span>Итого за блюдо</span>
-                        <strong>${CONFIG.formatPrice(product.price)}</strong>
-                    </div>
-                    <div class="detail-actions" id="detailActions">
-                        ${renderProductActions(product)}
-                    </div>
-                </div>
-            </div>
-        </article>
-    `;
-}
-
-function syncCurrentProductActions(productId) {
-    const actions = document.getElementById('detailActions');
-    if (!actions || currentProduct?.id !== productId) return;
-    actions.innerHTML = renderProductActions(currentProduct);
-}
-
-function addToCartFromPreview(event, productId, trigger) {
-    event.stopPropagation();
-    addToCart(productId, 1, trigger);
 }
 
 function addToCart(productId, quantity = 1, trigger = null) {
@@ -336,7 +348,6 @@ function addToCart(productId, quantity = 1, trigger = null) {
     }
 
     updateCartBadge();
-    syncCurrentProductActions(productId);
     maxApp.hapticFeedback('success');
     alertInline(`${product.name} добавлен в заказ`);
 
@@ -351,10 +362,26 @@ function addToCart(productId, quantity = 1, trigger = null) {
     }
 }
 
+function setCartItemQuantity(productId, quantity, shouldRenderCart = true) {
+    if (quantity <= 0) return removeFromCart(productId, shouldRenderCart);
+
+    const product = CONFIG.getProductById(productId);
+    if (!product) return;
+
+    const existingItem = getCartItem(productId);
+    if (existingItem) {
+        existingItem.quantity = quantity;
+    } else {
+        cart.push({ product, quantity });
+    }
+
+    updateCartBadge();
+    if (shouldRenderCart) renderCart();
+}
+
 function removeFromCart(productId, shouldRenderCart = true) {
     cart = cart.filter((item) => item.product.id !== productId);
     updateCartBadge();
-    syncCurrentProductActions(productId);
     if (shouldRenderCart) renderCart();
 }
 
@@ -364,13 +391,7 @@ function updateCartItemQuantity(productId, quantity, shouldRenderCart = true) {
     if (!item) return;
     item.quantity = quantity;
     updateCartBadge();
-    syncCurrentProductActions(productId);
     if (shouldRenderCart) renderCart();
-}
-
-function updateDetailProductQuantity(productId, quantity) {
-    updateCartItemQuantity(productId, quantity, false);
-    maxApp.hapticFeedback('light');
 }
 
 function updateCartBadge() {

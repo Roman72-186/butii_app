@@ -85,13 +85,22 @@
                 </div>
             </section>
 
-            <section id="productDetailsSection" class="screen screen-detail" style="display: none;">
-                <div class="section-header">
-                    <button class="back-btn" onclick="showProducts()">←</button>
-                    <h2>Детали блюда</h2>
-                </div>
-                <div id="productDetails"></div>
-            </section>
+            <div id="productPreviewModal" class="product-modal" hidden onclick="closeProductPreviewOnBackdrop(event)">
+                <article class="product-modal-card" role="dialog" aria-modal="true" aria-labelledby="productPreviewTitle">
+                    <button type="button" class="modal-close" onclick="closeProductPreview()" aria-label="Закрыть">×</button>
+                    <div class="product-modal-photo">
+                        <img id="productPreviewImage" src="" alt="" onerror="this.onerror=null; this.src=getProductFallbackImage({ name: document.getElementById('productPreviewTitle').textContent, badge: document.getElementById('productPreviewBadge').textContent })">
+                        <span id="productPreviewBadge"></span>
+                    </div>
+                    <div class="product-modal-copy">
+                        <p class="eyebrow" id="productPreviewMeta"></p>
+                        <h2 id="productPreviewTitle"></h2>
+                        <p id="productPreviewDescription"></p>
+                        <div class="product-modal-bullets" id="productPreviewBullets"></div>
+                        <strong class="product-modal-price" id="productPreviewPrice"></strong>
+                    </div>
+                </article>
+            </div>
 
             <section id="cartSection" class="screen" style="display: none;">
                 <div class="section-header">
