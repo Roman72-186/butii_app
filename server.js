@@ -79,6 +79,51 @@ function publicOrigin(req) {
   return `${req.protocol}://${req.get('host')}`
 }
 
+app.get('/api/image', async (req, res) => {
+  let imageUrl
+  try {
+    imageUrl = new URL(String(req.query.url || ''))
+  } catch (error) {
+    return res.status(400).json({ ok: false, error: 'INVALID_IMAGE_URL' })
+  }
+
+  const allowedHosts = new Set(['images.unsplash.com'])
+  if (imageUrl.protocol !== 'https:' || !allowedHosts.has(imageUrl.hostname)) {
+    return res.status(400).json({ ok: false, error: 'IMAGE_HOST_NOT_ALLOWED' })
+  }
+
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 8000)
+
+  try {
+    const response = await fetch(imageUrl, {
+      headers: {
+        'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+        'User-Agent': 'keychain-shop-image-proxy/1.0',
+      },
+      signal: controller.signal,
+    })
+
+    if (!response.ok) {
+      return res.status(response.status).json({ ok: false, error: 'IMAGE_FETCH_FAILED' })
+    }
+
+    const contentType = response.headers.get('content-type') || ''
+    if (!contentType.startsWith('image/')) {
+      return res.status(502).json({ ok: false, error: 'INVALID_IMAGE_CONTENT_TYPE' })
+    }
+
+    const body = Buffer.from(await response.arrayBuffer())
+    res.setHeader('Content-Type', contentType)
+    res.setHeader('Cache-Control', 'public, max-age=86400, stale-while-revalidate=604800')
+    res.send(body)
+  } catch (error) {
+    res.status(502).json({ ok: false, error: 'IMAGE_PROXY_FAILED' })
+  } finally {
+    clearTimeout(timeout)
+  }
+})
+
 app.get('/api/health', (req, res) => {
   res.json({
     ok: true,

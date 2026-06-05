@@ -170,6 +170,50 @@ function getCategoryName(categoryId) {
     return CONFIG.CATEGORIES.find((category) => category.id === categoryId)?.name || categoryId;
 }
 
+function getProductImageSrc(product) {
+    if (!product?.image) return getProductFallbackImage(product);
+
+    try {
+        const imageUrl = new URL(product.image, window.location.origin);
+        if (imageUrl.origin === window.location.origin) return imageUrl.href;
+        return `/api/image?url=${encodeURIComponent(imageUrl.href)}`;
+    } catch (error) {
+        return getProductFallbackImage(product);
+    }
+}
+
+function getProductFallbackImage(product) {
+    const accentColors = {
+        yellow: '#ffd400',
+        red: '#ff3b30',
+        orange: '#ff8a00',
+        green: '#26c281',
+        black: '#080808',
+    };
+    const accent = accentColors[product?.accent] || accentColors.yellow;
+    const name = escapeHtml(product?.name || CONFIG.SHOP.name);
+    const badge = escapeHtml(product?.badge || 'MAX');
+    const svg = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 620">
+            <rect width="900" height="620" fill="#080808"/>
+            <circle cx="710" cy="105" r="180" fill="${accent}" opacity="0.92"/>
+            <circle cx="140" cy="520" r="220" fill="#ffffff" opacity="0.12"/>
+            <rect x="96" y="118" width="708" height="384" rx="44" fill="#ffffff"/>
+            <rect x="146" y="168" width="608" height="148" rx="74" fill="${accent}"/>
+            <rect x="190" y="350" width="520" height="72" rx="36" fill="#080808"/>
+            <text x="450" y="258" fill="#080808" font-family="Arial, sans-serif" font-size="54" font-weight="800" text-anchor="middle">${badge}</text>
+            <text x="450" y="454" fill="#ffffff" font-family="Arial, sans-serif" font-size="38" font-weight="800" text-anchor="middle">${name}</text>
+        </svg>
+    `.trim();
+    return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+}
+
+function handleProductImageError(image, productId) {
+    const product = CONFIG.getProductById(productId);
+    image.onerror = null;
+    image.src = getProductFallbackImage(product);
+}
+
 function renderProducts() {
     const container = document.getElementById('productsGrid');
     const products = CONFIG.getProductsByCategory(currentCategory);
@@ -177,7 +221,7 @@ function renderProducts() {
     container.innerHTML = products.map((product) => `
         <article class="product-card accent-${product.accent}" onclick="showProduct('${product.id}')">
             <div class="product-photo">
-                <img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.name)}" loading="lazy">
+                <img src="${escapeHtml(getProductImageSrc(product))}" alt="${escapeHtml(product.name)}" loading="lazy" onerror="handleProductImageError(this, '${escapeHtml(product.id)}')">
                 <span class="product-badge">${escapeHtml(product.badge)}</span>
                 <strong class="product-price">${CONFIG.formatPrice(product.price)}</strong>
             </div>
@@ -199,7 +243,7 @@ function renderProductDetails(product) {
         <article class="detail-card accent-${product.accent}">
             <div class="detail-layout">
                 <div class="detail-photo">
-                    <img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.name)}">
+                    <img src="${escapeHtml(getProductImageSrc(product))}" alt="${escapeHtml(product.name)}" onerror="handleProductImageError(this, '${escapeHtml(product.id)}')">
                     <span>${escapeHtml(product.badge)}</span>
                 </div>
                 <div class="detail-copy">
@@ -287,7 +331,7 @@ function renderCart() {
 
     container.innerHTML = cart.map((item) => `
         <article class="cart-item">
-            <img src="${escapeHtml(item.product.image)}" alt="${escapeHtml(item.product.name)}">
+            <img src="${escapeHtml(getProductImageSrc(item.product))}" alt="${escapeHtml(item.product.name)}" onerror="handleProductImageError(this, '${escapeHtml(item.product.id)}')">
             <div>
                 <h3>${escapeHtml(item.product.name)}</h3>
                 <p>${CONFIG.formatPrice(item.product.price)} · ${escapeHtml(item.product.badge)}</p>
