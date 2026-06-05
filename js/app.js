@@ -35,7 +35,17 @@ async function init() {
 function setupHeader() {
     document.getElementById('shopName').textContent = CONFIG.SHOP.name;
     const heroUser = document.getElementById('heroUser');
-    if (heroUser) heroUser.textContent = maxApp.getUserName();
+    const userName = getMessengerFirstName();
+    if (heroUser) heroUser.textContent = userName ? `Привет, ${userName}!` : 'Привет!';
+}
+
+function getMessengerFirstName() {
+    const user = maxApp.getUser();
+    const firstName = String(user?.first_name || '').trim();
+    if (firstName) return firstName;
+
+    const fullName = maxApp.getUserName().trim();
+    return fullName && fullName !== 'MAX User' ? fullName.split(/\s+/)[0] : '';
 }
 
 async function authenticateMaxUser() {

@@ -219,6 +219,13 @@ h3 {
     text-wrap: balance;
 }
 
+.hero-greeting {
+    margin-bottom: 14px;
+    color: rgba(255, 255, 255, 0.86);
+    font-size: 20px;
+    font-weight: 800;
+}
+
 .hero-lead {
     max-width: 680px;
     margin-bottom: 0;
