@@ -231,12 +231,25 @@ function renderProducts() {
                 <div class="product-bullets">
                     ${product.bullets.map((bullet) => `<span>${escapeHtml(bullet)}</span>`).join('')}
                 </div>
-                <div class="product-actions">
+                <div class="product-actions" data-product-id="${escapeHtml(product.id)}">
                     ${renderPreviewCartActions(product)}
                 </div>
             </div>
         </article>
     `).join('');
+}
+
+function getProductActionsNode(productId) {
+    return Array.from(document.querySelectorAll('.product-actions'))
+        .find((node) => node.dataset.productId === productId) || null;
+}
+
+function renderProductCartActions(productId) {
+    const product = CONFIG.getProductById(productId);
+    const actions = getProductActionsNode(productId);
+    if (!product || !actions) return;
+
+    actions.innerHTML = renderPreviewCartActions(product);
 }
 
 function renderPreviewCartActions(product) {
@@ -263,7 +276,7 @@ function renderPreviewCartActions(product) {
 
 function startProductDraftQuantity(productId) {
     productDraftQuantities = { ...productDraftQuantities, [productId]: getCartQuantity(productId) || 1 };
-    renderProducts();
+    renderProductCartActions(productId);
     maxApp.hapticFeedback('light');
 }
 
@@ -276,7 +289,7 @@ function changeProductDraftQuantity(productId, quantity) {
         productDraftQuantities = { ...productDraftQuantities, [productId]: quantity };
     }
 
-    renderProducts();
+    renderProductCartActions(productId);
     maxApp.hapticFeedback('light');
 }
 
@@ -290,7 +303,7 @@ function confirmProductDraftQuantity(productId) {
     delete nextDrafts[productId];
     productDraftQuantities = nextDrafts;
 
-    renderProducts();
+    renderProductCartActions(productId);
     maxApp.hapticFeedback('success');
     alertInline(`${product.name}: ${quantity} шт. в корзине`);
 }
