@@ -257,14 +257,17 @@ function renderProductDetails(product) {
                         <span>Итого за блюдо</span>
                         <strong>${CONFIG.formatPrice(product.price)}</strong>
                     </div>
-                    <button class="action-primary full" onclick="addToCart('${product.id}', 1)">Добавить к заказу</button>
+                    <div class="detail-actions">
+                        <button class="action-primary full" onclick="addToCart('${product.id}', 1, this)">Добавить к заказу</button>
+                        <button class="action-ghost full" onclick="showCart()">В корзину</button>
+                    </div>
                 </div>
             </div>
         </article>
     `;
 }
 
-function addToCart(productId, quantity = 1) {
+function addToCart(productId, quantity = 1, trigger = null) {
     const product = CONFIG.getProductById(productId);
     if (!product) return;
 
@@ -277,7 +280,17 @@ function addToCart(productId, quantity = 1) {
 
     updateCartBadge();
     maxApp.hapticFeedback('success');
-    showCart();
+    alertInline(`${product.name} добавлен в заказ`);
+
+    if (trigger) {
+        const initialText = trigger.textContent;
+        trigger.textContent = 'Добавлено';
+        trigger.disabled = true;
+        setTimeout(() => {
+            trigger.textContent = initialText;
+            trigger.disabled = false;
+        }, 1200);
+    }
 }
 
 function removeFromCart(productId) {

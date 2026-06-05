@@ -583,6 +583,11 @@ h3 {
     font-size: 17px;
 }
 
+.detail-actions {
+    display: grid;
+    gap: 10px;
+}
+
 .detail-bullets {
     display: grid;
     gap: 10px;
