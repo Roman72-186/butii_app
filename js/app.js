@@ -5,6 +5,7 @@
 let currentCategory = 'all';
 let cart = [];
 let currentProduct = null;
+let cartReturnProductId = null;
 let authToken = localStorage.getItem('max_burger_token') || null;
 let currentOrder = null;
 let fulfillmentMethod = 'delivery';
@@ -77,6 +78,7 @@ function showSection(sectionId) {
 }
 
 function showProducts() {
+    currentProduct = null;
     showSection('productsSection');
 }
 
@@ -96,13 +98,25 @@ function showProduct(productId) {
     showSection('productDetailsSection');
 }
 
-function showCart() {
+function showCart(returnProductId = null) {
+    cartReturnProductId = returnProductId;
     renderCart();
     showSection('cartSection');
 }
 
 function showCheckout() {
     showCart();
+}
+
+function goBackFromCart() {
+    if (cartReturnProductId) {
+        const productId = cartReturnProductId;
+        cartReturnProductId = null;
+        showProduct(productId);
+        return;
+    }
+
+    showProducts();
 }
 
 function showPayment(order, paymentPayload) {
@@ -232,9 +246,42 @@ function renderProducts() {
                 <div class="product-bullets">
                     ${product.bullets.map((bullet) => `<span>${escapeHtml(bullet)}</span>`).join('')}
                 </div>
+                <div class="product-actions">
+                    <button class="action-primary full" onclick="addToCartFromPreview(event, '${product.id}', this)">Добавить в корзину</button>
+                </div>
             </div>
         </article>
     `).join('');
+}
+
+function getCartItem(productId) {
+    return cart.find((item) => item.product.id === productId) || null;
+}
+
+function getCartQuantity(productId) {
+    return getCartItem(productId)?.quantity || 0;
+}
+
+function renderProductActions(product) {
+    const quantity = getCartQuantity(product.id);
+
+    if (quantity > 0) {
+        return `
+            <div class="detail-quantity">
+                <span>Количество</span>
+                <div class="qty-control">
+                    <button type="button" aria-label="Уменьшить" onclick="updateDetailProductQuantity('${product.id}', ${quantity - 1})">-</button>
+                    <strong>${quantity}</strong>
+                    <button type="button" aria-label="Увеличить" onclick="updateDetailProductQuantity('${product.id}', ${quantity + 1})">+</button>
+                </div>
+            </div>
+            <button class="action-ghost full" onclick="showCart('${product.id}')">В корзину</button>
+        `;
+    }
+
+    return `
+        <button class="action-primary full" onclick="addToCart('${product.id}', 1, this)">Добавить к заказу</button>
+    `;
 }
 
 function renderProductDetails(product) {
@@ -257,14 +304,24 @@ function renderProductDetails(product) {
                         <span>Итого за блюдо</span>
                         <strong>${CONFIG.formatPrice(product.price)}</strong>
                     </div>
-                    <div class="detail-actions">
-                        <button class="action-primary full" onclick="addToCart('${product.id}', 1, this)">Добавить к заказу</button>
-                        <button class="action-ghost full" onclick="showCart()">В корзину</button>
+                    <div class="detail-actions" id="detailActions">
+                        ${renderProductActions(product)}
                     </div>
                 </div>
             </div>
         </article>
     `;
+}
+
+function syncCurrentProductActions(productId) {
+    const actions = document.getElementById('detailActions');
+    if (!actions || currentProduct?.id !== productId) return;
+    actions.innerHTML = renderProductActions(currentProduct);
+}
+
+function addToCartFromPreview(event, productId, trigger) {
+    event.stopPropagation();
+    addToCart(productId, 1, trigger);
 }
 
 function addToCart(productId, quantity = 1, trigger = null) {
@@ -279,10 +336,11 @@ function addToCart(productId, quantity = 1, trigger = null) {
     }
 
     updateCartBadge();
+    syncCurrentProductActions(productId);
     maxApp.hapticFeedback('success');
     alertInline(`${product.name} добавлен в заказ`);
 
-    if (trigger) {
+    if (trigger && trigger.isConnected) {
         const initialText = trigger.textContent;
         trigger.textContent = 'Добавлено';
         trigger.disabled = true;
@@ -293,19 +351,26 @@ function addToCart(productId, quantity = 1, trigger = null) {
     }
 }
 
-function removeFromCart(productId) {
+function removeFromCart(productId, shouldRenderCart = true) {
     cart = cart.filter((item) => item.product.id !== productId);
     updateCartBadge();
-    renderCart();
+    syncCurrentProductActions(productId);
+    if (shouldRenderCart) renderCart();
 }
 
-function updateCartItemQuantity(productId, quantity) {
-    if (quantity <= 0) return removeFromCart(productId);
-    const item = cart.find((entry) => entry.product.id === productId);
+function updateCartItemQuantity(productId, quantity, shouldRenderCart = true) {
+    if (quantity <= 0) return removeFromCart(productId, shouldRenderCart);
+    const item = getCartItem(productId);
     if (!item) return;
     item.quantity = quantity;
     updateCartBadge();
-    renderCart();
+    syncCurrentProductActions(productId);
+    if (shouldRenderCart) renderCart();
+}
+
+function updateDetailProductQuantity(productId, quantity) {
+    updateCartItemQuantity(productId, quantity, false);
+    maxApp.hapticFeedback('light');
 }
 
 function updateCartBadge() {

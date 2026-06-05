@@ -503,6 +503,14 @@ h3 {
     font-weight: 800;
 }
 
+.product-actions {
+    margin-top: 16px;
+}
+
+.product-actions .action-primary {
+    min-height: 46px;
+}
+
 .accent-red .product-badge,
 .accent-red.detail-card .detail-photo span {
     background: var(--red);
@@ -586,6 +594,22 @@ h3 {
 .detail-actions {
     display: grid;
     gap: 10px;
+}
+
+.detail-quantity {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 12px;
+    min-height: 52px;
+    padding: 8px 10px 8px 16px;
+    border: 1px solid var(--ink);
+    border-radius: var(--radius);
+    background: var(--white);
+}
+
+.detail-quantity > span {
+    font-weight: 800;
 }
 
 .detail-bullets {
