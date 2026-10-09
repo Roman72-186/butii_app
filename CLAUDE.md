@@ -1,4 +1,4 @@
-﻿> Совместимый вход для Claude Code: перед работой читать [AGENTS.md](AGENTS.md), затем [../AGENTS.md](../AGENTS.md).  
+﻿> Совместимый вход для Claude Code: перед работой читать [AGENTS.md](AGENTS.md), затем [../../../AGENTS.md](../../../AGENTS.md).  
 > Сохранить сессию → C:\Users\User\.agents\skills\save-session\SKILL.md → session-handoffs/current.md.  
 > Прочитай сохранённую сессию → сначала session-handoffs/current.md, затем [AGENTS.md](AGENTS.md).
 
@@ -15,10 +15,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Принципы кода:** [../ai-clone/principles/code.md](../ai-clone/principles/code.md)
 - **Принципы продукта:** [../ai-clone/principles/product.md](../ai-clone/principles/product.md)
 - **Уроки и подтверждённые решения:** [../ai-clone/feedback/](../ai-clone/feedback/) — `Why / How to apply`
-- **Совет директоров (методы):** [../mastery/INDEX.md](../mastery/INDEX.md)
-- **Активные планы:** [../plans/](../plans/) — файлы с префиксом `keychain-`
-- **Ретроспективы:** [../retrospectives/](../retrospectives/)
-- **Корневой навигатор:** [../CLAUDE.md](../CLAUDE.md)
+- **Совет директоров (методы):** [../../_brain/mastery/README.md](../../_brain/mastery/README.md)
+- **Планы:** локальная папка `plans/` этого проекта, файлы `ГГГГ-ММ-ДД-<тема>.md`. Общая корневая `plans/` для новых планов не используется.
+- **Ретроспективы:** [../../../retrospectives/](../../../retrospectives/)
+- **Корневой навигатор:** [../../../CLAUDE.md](../../../CLAUDE.md)
 
 ---
 
